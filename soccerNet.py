@@ -5,6 +5,8 @@ from roboflow import Roboflow
 SOURCE_VIDEO_PATH = "Soccergame.mov"
 TARGET_VIDEO_PATH = "video_out.mov"
 
+
+# NOTE TO ALL: This is the code used directly from the dataset, can use this as a guide to add features
 # use https://roboflow.github.io/polygonzone/ to get the points for your line
 LINE_START = sv.Point(0, 300)
 LINE_END = sv.Point(800, 300)
@@ -64,7 +66,7 @@ def callback(frame: np.ndarray, index: int) -> np.ndarray:
     # Update line counter
     line_zone.trigger(detections)
     
-    # Return frame with box and line annotated result
+    # Return frame with box 
     return line_zone_annotator.annotate(annotated_frame, line_counter=line_zone)
 
 # Process the whole video
