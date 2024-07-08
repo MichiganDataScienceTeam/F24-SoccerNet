@@ -6,7 +6,7 @@ import collections
 SOURCE_VIDEO_PATH = "Soccergame.mov"
 TARGET_VIDEO_PATH = "video_out.mov"
 
-rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI")
+rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI") #Free API key but Ill prolly remove
 project = rf.workspace().project("football-players-detection-3zvbc")
 model = project.version(9).model
 
@@ -25,7 +25,7 @@ box_annotator = sv.BoxAnnotator(thickness=2, text_thickness=2, text_scale=1.5)
 # Create instance of TraceAnnotator
 trace_annotator = sv.TraceAnnotator(thickness=2, trace_length=50)
 
-# We will be using a dictionary to store the last known positions of the trackers
+# We will be using a dictionary to store the last known positions of the trackers so we can do it for speed 
 last_positions = {}
 speed_buffers = collections.defaultdict(lambda: collections.deque(maxlen=5))  # Buffer to store recent speeds
 frame_counts = collections.defaultdict(int)  # To keep track of frames for each tracker
@@ -35,7 +35,7 @@ def get_centroid(bbox):
     x1, y1, x2, y2 = bbox
     return np.array([(x1 + x2) / 2, (y1 + y2) / 2])
 
-# Define the callback function to be used in video processing
+# Defining the callback function to be used in video processing
 def callback(frame: np.ndarray, index: int, video_fps: float) -> np.ndarray:
     # Model prediction on single frame and conversion to supervision Detections
     results = model.predict(frame).json()
@@ -66,7 +66,7 @@ def callback(frame: np.ndarray, index: int, video_fps: float) -> np.ndarray:
 
             # Update speed display every fourth second
             if frame_counts[tracker_id] >= video_fps / 4:
-                # Calculate the average speed from the buffer
+                # Calculate the average speed from the buffer so that we get an average over the 1/4 second 
                 avg_speed = np.mean(speed_buffers[tracker_id])
                 last_speeds[tracker_id] = f"Speed: {int(avg_speed)} fiftypx/sec"
                 frame_counts[tracker_id] = 0  # Reset the frame count
@@ -74,7 +74,7 @@ def callback(frame: np.ndarray, index: int, video_fps: float) -> np.ndarray:
         else:
             labels.append(f"{detections.data['class_name'][i]} {detections.confidence[i]:.2f}")
 
-        # Update the last known position
+        # Update the last known position and repeat all over
         last_positions[tracker_id] = centroid
 
     # Annotate frame with traces and boxes
@@ -91,8 +91,8 @@ def callback(frame: np.ndarray, index: int, video_fps: float) -> np.ndarray:
     # Return annotated frame
     return annotated_frame
 
-# Process the whole video, assuming there is a way to get fps from video_info or similar
-video_fps = video_info.fps  # Make sure to replace with the actual FPS from your video_info object
+# Process the whole video, assuming there is a way to get fps i'm just going to use 30fps
+video_fps = video_info.fps 
 
 sv.process_video(
     source_path=SOURCE_VIDEO_PATH,
