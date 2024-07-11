@@ -3,8 +3,8 @@ import supervision as sv
 from roboflow import Roboflow
 import collections
 
-SOURCE_VIDEO_PATH = "Soccergame.mov"
-TARGET_VIDEO_PATH = "video_out.mov"
+SOURCE_VIDEO_PATH = "your_video"
+TARGET_VIDEO_PATH = "output_video"
 
 rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI")
 project = rf.workspace().project("football-players-detection-3zvbc")
