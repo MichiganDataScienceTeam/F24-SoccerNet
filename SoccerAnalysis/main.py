@@ -8,7 +8,7 @@ TARGET_VIDEO_PATH = "new_vid.mp4"
 STUB_PATH = "stub_tracks.pkl"
 PLAYER_PROJECT_NAME = "football-players-detection-3zvbc"
 VERSION_NUMBER = 1
-PlAYER_API_KEY = "2c8BbR867fBO7Rmyg9VI"
+PlAYER_API_KEY = ""
 
 
 # Initialize the Plyer Roboflow model and Tracker
