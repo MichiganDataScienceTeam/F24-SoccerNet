@@ -9,14 +9,12 @@ import videoUtils
 
 SOURCE_VIDEO_PATH = "20SecGoodVid.mov"
 TARGET_VIDEO_PATH = "middle_vid.mp4"
-PlAYER_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
+PlAYER_API_KEY = ""
 PLAYER_STUB_PATH = "stub_tracks_mid.pkl"
 PLAYER_PROJECT_NAME = "football-players-detection-3zvbc"
 VERSION_NUMBER = 1
-BOXES_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
+BOXES_API_KEY = ""
 BOXES_PROJECT_NAME = "football0detections"
-
-
 
 
 # Initialize the Plyer Roboflow model and Tracker

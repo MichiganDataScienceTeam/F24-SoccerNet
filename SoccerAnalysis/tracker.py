@@ -23,21 +23,6 @@ class Tracker:
 
         self.tracker = sv.ByteTrack()
     
-    def add_position_to_tracks(self, tracks):
-        for obj, object_tracks in tracks.items():
-            for frame_num, track in enumerate(object_tracks):
-                for track_id, track_info in track.items():
-                    if 'bbox' in track_info:
-                        bbox = track_info['bbox']
-                        if obj == 'ball':
-                            position = bboxUtils.get_center_of_bbox(bbox)
-                        elif obj == 'player' or obj == 'referee':
-                            position = bboxUtils.get_foot_position(bbox)
-                        else:
-                            position = bboxUtils.get_center_of_bbox(bbox)
-                            tracks[obj][frame_num][track_id]['width'] = bboxUtils.get_bbox_width(bbox)
-                            tracks[obj][frame_num][track_id]['height'] = bboxUtils.get_bbox_height(bbox)
-                    tracks[obj][frame_num][track_id]['position'] = position
     
     def preprocess_image(self, image, target_size=(640, 640)):
     # Resize the image to the target size
@@ -49,6 +34,18 @@ class Tracker:
     def resize_back_to_original(self, image):
         # Resize the image back to the original size
         return cv2.resize(image, self.original_size)
+    
+    def add_position_to_tracks(self,tracks):
+        for object, object_tracks in tracks.items():
+            for frame_num, track in enumerate(object_tracks):
+                for track_id, track_info in track.items():
+                    bbox = track_info['bbox']
+                    if object == 'ball':
+                        position= bboxUtils.get_center_of_bbox(bbox)
+                    else:
+                        position = bboxUtils.get_foot_position(bbox)
+                    tracks[object][frame_num][track_id]['position'] = position
+    
     
     def detect_frames(self, frames):
         detections = []
