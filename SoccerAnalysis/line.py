@@ -225,74 +225,59 @@ class WhiteLineDetector:
 
     def draw_line_of_best_fit(self, image, start_point, end_point):
         cv2.line(image, start_point, end_point, (0, 255, 255), 3)  # Draw line in yellow (BGR: 0, 255, 255)
-    def is_point_in_bbox(self, point, bbox, margin=5):
+    def is_point_in_bbox(self, point, bbox, margin=8):
         x, y = point
         x1, y1, x2, y2 = map(int, bbox)
         return (x1 - margin) <= x <= (x2 + margin) and (y1 - margin) <= y <= (y2 + margin)
 
 
-    def process_image(self, image):
-        # Detect the field boundary first
-        green_colors = self.get_dominant_green_colors(image)
-        field_contour = self.find_field_boundary(image, green_colors)
+    def process_image(self, frame):
+        all_intersections = []
+        green_colors = self.get_dominant_green_colors(frame)
 
-        boundary_func = lambda x, y: True  # Default to consider all lines
-        boundary_points = None
-
-        if field_contour is not None:
-            boundary_y = np.min(field_contour[:, 0, 1])
-            boundary_func = lambda x, y: y >= boundary_y
-            boundary_points = (field_contour, 'contour')
-            if self.is_contour_close_to_edges(image, field_contour):
-            #Find the boundary function for filtering
-                boundary_y = np.min(field_contour[:, 0, 1])
-                boundary_func = lambda x, y: y >= boundary_y
-                boundary_points = (field_contour, 'contour')
-                #cv2.line(image, (0, boundary_y), (image.shape[1], boundary_y), (255, 0, 0), 2)
-            else:
-                start_point, end_point, boundary_func = self.get_line_of_best_fit(field_contour, image.shape)
-                boundary_points = (start_point, end_point, 'line_of_best_fit')
-        # Process the image to detect edges and lines
-        edges = self.detect_edges(image)
+        edges = self.detect_edges(frame)
         lines = self.detect_lines(edges)
-        filtered_lines = self.filter_lines(lines, image, green_colors, boundary_func)
+        filtered_lines = self.filter_lines(lines, frame, green_colors)
+        intersections = self.find_intersections(filtered_lines)
+        combined_intersections = self.combine_close_intersections(intersections)
+            
+        # Filter out intersections inside player bounding boxes
+        all_intersections.append(combined_intersections)
 
-        # Draw the filtered lines
-        if filtered_lines is not None:
-            for line in filtered_lines:
-                x1, y1, x2, y2 = line[0]
-                cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        self.intersections = all_intersections
 
-        # Find and draw intersections
-        combined_intersections = self.find_intersections(filtered_lines)
-        combined_intersections = self.combine_close_intersections(combined_intersections)
-        self.draw_intersections(image, combined_intersections)
-        
-        # Draw the field boundary last
-        if boundary_points is not None:
-            if boundary_points[-1] == 'contour':
-                self.draw_field_boundary(image, boundary_points[0])
-            elif boundary_points[-1] == 'line_of_best_fit':
-                self.draw_line_of_best_fit(image, boundary_points[0], boundary_points[1])
-                print()
+        # Draw the intersections as large purple circles
+        for intersection in combined_intersections:
+            cv2.circle(frame, (int(intersection[0]), int(intersection[1])), 10, (255, 0, 255), -1) # 10 is the radius, (255, 0, 255) is the color purple in BGR, -1 is the fill thickness
 
-        
-        return image, combined_intersections
-    def filter_intersections(self, intersections, player_dict, referee_dict):
+        return frame
+    
+
+
+    def filter_intersections(self, intersections, player_dict, referee_dict, first_half_dict, second_half_dict):
         filtered_intersections = []
         for point in intersections:
-            inside_bbox = False
-            for bbox_dict in [player_dict, referee_dict]:
-                for obj in bbox_dict.values():
-                    bbox = obj["bbox"]
-                    if self.is_point_in_bbox(point, bbox):
-                        inside_bbox = True
-                        break
-                if inside_bbox:
-                    break
+            inside_half = any(
+                self.is_point_in_bbox(point, obj["bbox"])
+                for half_dict in [first_half_dict, second_half_dict]
+                for obj in half_dict.values()
+            )
+
+            if not inside_half:
+                continue
+
+            inside_bbox = any(
+                self.is_point_in_bbox(point, obj["bbox"])
+                for bbox_dict in [player_dict, referee_dict]
+                for obj in bbox_dict.values()
+            )
+
             if not inside_bbox:
                 filtered_intersections.append(point)
+
         return filtered_intersections
+
+
 
     def get_intersections(self, frames, tracks, save_path=None, load_path=None):
         if load_path and os.path.exists(load_path):
@@ -312,9 +297,11 @@ class WhiteLineDetector:
             combined_intersections = self.combine_close_intersections(intersections)
             
             # Filter out intersections inside player bounding boxes
+            first_half_dict = tracks["First Half Field"][frame_num]
+            second_half_dict = tracks["Second Half Field"][frame_num]
             player_dict = tracks["players"][frame_num]
             referee_dict = tracks["referees"][frame_num]
-            filtered_intersections = self.filter_intersections(combined_intersections, player_dict, referee_dict)
+            filtered_intersections = self.filter_intersections(combined_intersections, player_dict, referee_dict, first_half_dict, second_half_dict)
             all_intersections.append(filtered_intersections)
                 
             tracks["Key Points"][frame_num]["points"] = filtered_intersections
@@ -336,11 +323,106 @@ class WhiteLineDetector:
         for frame_num, frame in enumerate(frames):
             frame = frame.copy()
             intersection_points = tracks["Key Points"][frame_num]["points"]
-            print(intersection_points)
 
             for point in intersection_points:
                 cv2.circle(frame, tuple(point), 20, (255, 0, 255), -1)
+
+            if "Top Circle Point" in tracks["Key Points"][frame_num]:
+                top_circle_point = tracks["Key Points"][frame_num]["Top Circle Point"]
+                if top_circle_point is not None:
+                    top_circle_point = tuple(map(int,top_circle_point))
+                    cv2.circle(frame, top_circle_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Top Circle Point", (top_circle_point[0], top_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            # Check for "Bottom Circle Point" and draw it if present
+            if "Bottom Circle Point" in tracks["Key Points"][frame_num]:
+                bottom_circle_point = tracks["Key Points"][frame_num]["Bottom Circle Point"]
+                if bottom_circle_point is not None:
+                    bottom_circle_point = tuple(map(int, bottom_circle_point))
+                    cv2.circle(frame, bottom_circle_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Bottom Circle Point", (bottom_circle_point[0], bottom_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Left Circle Point" in tracks["Key Points"][frame_num]:
+                left_circle_point = tracks["Key Points"][frame_num]["Left Circle Point"]
+                if left_circle_point is not None:
+                    left_circle_point = tuple(map(int, left_circle_point))
+                    cv2.circle(frame, left_circle_point, 20, (0, 165, 255), -1)
+                    cv2.putText(frame, "Left Circle Point", (left_circle_point[0], left_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 165, 255), 2, cv2.LINE_AA)
+                    
+            if "Right Circle Point" in tracks["Key Points"][frame_num]:
+                right_circle_point = tracks["Key Points"][frame_num]["Right Circle Point"]
+                if right_circle_point is not None:
+                    right_circle_point = tuple(map(int, right_circle_point))
+                    cv2.circle(frame, right_circle_point, 20, (0, 165, 255), -1)
+                    cv2.putText(frame, "Right Circle Point", (right_circle_point[0], right_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 165, 255), 2, cv2.LINE_AA)
             
+            if "Center Circle Point" in tracks["Key Points"][frame_num]:
+                center_circle_point = tracks["Key Points"][frame_num]["Center Circle Point"]
+                if center_circle_point is not None:
+                    center_circle_point = tuple(map(int, center_circle_point))
+                    cv2.circle(frame, center_circle_point, 20, (0, 255, 255), -1)
+                    cv2.putText(frame, "Center Circle Point", (center_circle_point[0], center_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
+                    
+            if "Top Center Point" in tracks["Key Points"][frame_num]:
+                top_center_point = tracks["Key Points"][frame_num]["Top Center Point"]
+                if top_center_point is not None:
+                    top_center_point = tuple(map(int, top_center_point))
+                    cv2.circle(frame, top_center_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Top Center Point", (top_center_point[0], top_center_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Bottom Center Point" in tracks["Key Points"][frame_num]:
+                bottom_center_point = tracks["Key Points"][frame_num]["Bottom Center Point"]
+                if bottom_center_point is not None:
+                    bottom_center_point = tuple(map(int, bottom_center_point))
+                    cv2.circle(frame, bottom_center_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Bottom Center Point", (top_center_point[0], bottom_center_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Right Bottom 18Yard Circle Point" in tracks["Key Points"][frame_num]:
+                bottom_18_yard_circle_point = tracks["Key Points"][frame_num]["Right Bottom 18Yard Circle Point"]
+                if bottom_18_yard_circle_point is not None:
+                    bottom_18_yard_circle_point = tuple(map(int,bottom_18_yard_circle_point))
+                    cv2.circle(frame, bottom_18_yard_circle_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Right Bottom 18Yard Circle Point", (bottom_18_yard_circle_point[0], bottom_18_yard_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Right Top 18Yard Circle Point" in tracks["Key Points"][frame_num]:
+                top_18_yard_circle_point = tracks["Key Points"][frame_num]["Right Top 18Yard Circle Point"]
+                if top_18_yard_circle_point is not None:
+                    top_18_yard_circle_point = tuple(map(int,top_18_yard_circle_point))
+                    cv2.circle(frame, top_18_yard_circle_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Right Top 18Yard Circle Point", (top_18_yard_circle_point[0], top_18_yard_circle_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Right Top 18Yard Point" in tracks["Key Points"][frame_num]:
+                top_18_yard_point = tracks["Key Points"][frame_num]["Right Top 18Yard Point"]
+                if top_18_yard_point is not None:
+                    top_18_yard_point = tuple(map(int,top_18_yard_point))
+                    cv2.circle(frame, top_18_yard_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Right Top 18Yard Point", (top_18_yard_point[0], top_18_yard_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                 
+            if "Right Top 5Yard Point" in tracks["Key Points"][frame_num]:
+                top_5_yard_point = tracks["Key Points"][frame_num]["Right Top 5Yard Point"]
+                if top_5_yard_point is not None:
+                    top_5_yard_point = tuple(map(int,top_5_yard_point))
+                    cv2.circle(frame, top_5_yard_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Right Top 5Yard Point", (top_5_yard_point[0], top_5_yard_point[1] + 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    
+            if "Right Bottom 18Yard Point" in tracks["Key Points"][frame_num]:
+                right_bottom_18yard_point = tracks["Key Points"][frame_num]["Right Bottom 18Yard Point"]
+                if right_bottom_18yard_point is not None:
+                    right_bottom_18yard_point = tuple(map(int, right_bottom_18yard_point))
+                    cv2.circle(frame, right_bottom_18yard_point, 20, (0, 255, 0), -1)
+                    cv2.putText(frame, "Right Bottom 18Yard Point", (right_bottom_18yard_point[0], right_bottom_18yard_point[1] + 30), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
             output_frames.append(frame)
         
         return output_frames
@@ -390,14 +472,14 @@ class WhiteLineDetector:
 # Example usage with a single image
 
 def main():
-    image_path = ''
+    image_path = 'SoccerTestImage4.png'
     image = cv2.imread(image_path)
     if image is None:
         print("Error: Could not read the image.")
         return
 
     detector = WhiteLineDetector()
-    processed_image, intersections = detector.process_image(image)
+    processed_image = detector.process_image(image)
     
     cv2.imshow('Processed Image', processed_image)
     cv2.waitKey(0)
