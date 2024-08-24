@@ -42,9 +42,11 @@ class Tracker:
                     bbox = track_info['bbox']
                     if object == 'ball':
                         position= bboxUtils.get_center_of_bbox(bbox)
-                    else:
+                        tracks[object][frame_num][track_id]['position'] = position
+                    elif object == 'player' or object == 'referee':
                         position = bboxUtils.get_foot_position(bbox)
-                    tracks[object][frame_num][track_id]['position'] = position
+                        tracks[object][frame_num][track_id]['position'] = position
+        
     
     
     def detect_frames(self, frames):
@@ -346,8 +348,8 @@ class Tracker:
 
             # Draw Players
             for track_id, player in player_dict.items():
-                #color = player.get("team_color", (0, 0, 255))
-                frame = self.draw_ellipse(frame, player["bbox"], (0, 0, 255), track_id)
+                color = player.get("team_color", (0, 0, 255))
+                frame = self.draw_ellipse(frame, player["bbox"], color, track_id)
 
                 #if player.get('has_ball', False):
                     #frame = self.draw_triangle(frame, player["bbox"], (0, 0, 255))
@@ -359,6 +361,7 @@ class Tracker:
             # Draw ball
             for track_id, ball in ball_dict.items():
                 frame = self.draw_triangle(frame, ball["bbox"], (0, 255, 0))
+            
             
             for track_id, field_box in eighteen_yard_dict.items():
                 frame = self.draw_rectangle(frame, field_box["bbox"], (255, 0, 0), 2, "eighteen_yard")
