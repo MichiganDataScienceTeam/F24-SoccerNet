@@ -225,6 +225,8 @@ class WhiteLineDetector:
 
     def draw_line_of_best_fit(self, image, start_point, end_point):
         cv2.line(image, start_point, end_point, (0, 255, 255), 3)  # Draw line in yellow (BGR: 0, 255, 255)
+
+
     def is_point_in_bbox(self, point, bbox, margin=8):
         x, y = point
         x1, y1, x2, y2 = map(int, bbox)
@@ -324,8 +326,9 @@ class WhiteLineDetector:
             frame = frame.copy()
             intersection_points = tracks["Key Points"][frame_num]["points"]
 
-            for point in intersection_points:
-                cv2.circle(frame, tuple(point), 20, (255, 0, 255), -1)
+            #These are all intersections and will show up in purple
+            #for point in intersection_points:
+            #    cv2.circle(frame, tuple(point), 20, (255, 0, 255), -1)
 
             if "Top Circle Point" in tracks["Key Points"][frame_num]:
                 top_circle_point = tracks["Key Points"][frame_num]["Top Circle Point"]
