@@ -3,23 +3,23 @@ import os
 import cv2
 import pickle
 from roboflow import Roboflow
-from assign_teams import TeamAssigner
+from assign_team import TeamAssigner
 from tracker import Tracker
 from line import WhiteLineDetector
 from interpolator import Interpolator
 from camera_movement import CameraMovementEstimator
 from speed_and_distance_estimator import SpeedAndDistance_Estimator
-from algorithmic_intersection_finder import SuperAlgorithm
+from intersection_finder import SuperAlgorithm
 from transformer import ViewTransformer
 import videoUtils
 
 SOURCE_VIDEO_PATH = "20SecGoodVid.mov"
 TARGET_VIDEO_PATH = "interpolation_test4.mp4"
-PlAYER_API_KEY = ""
+PlAYER_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
 PLAYER_STUB_PATH = "stub_tracks_mid.pkl"
 PLAYER_PROJECT_NAME = "football-players-detection-3zvbc"
 VERSION_NUMBER = 1
-BOXES_API_KEY = ""
+BOXES_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
 BOXES_PROJECT_NAME = "football0detections"
 STUB_FRAMES_PATH = "frames_stub.pkl"
 
@@ -76,6 +76,7 @@ super_algorithm = SuperAlgorithm()
 tracks = super_algorithm.find_middle_intersections(tracks)
 tracks = super_algorithm.find_outer_intersections(tracks)
 tracks = super_algorithm.find_right_field_intersections(tracks)
+tracks = super_algorithm.find_left_field_intersections(tracks)
 #tracks = super_algorithms.find_left_field_intersections(tracks)
 
 print("Initializing Camera Movement")

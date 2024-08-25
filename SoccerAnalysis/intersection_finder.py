@@ -6,6 +6,114 @@ class SuperAlgorithm:
     def __init__(self):
         pass
 
+    def find_left_field_intersections(self, tracks):
+        first_half = tracks.get("First Half Field", [])
+        second_half = tracks.get("Second Half Field", [])
+        eighteen_yard_circle = tracks.get("18Yard Circle", [])
+        eighteen_yard = tracks.get("18Yard", [])
+        five_yard = tracks.get("5Yard", [])
+
+        for frame_num, (first_half_frame, second_half_frame) in enumerate(zip(first_half, second_half)):
+            if not second_half_frame and first_half_frame or (first_half_frame and second_half_frame and self.is_bigger_bbox(first_half_frame, second_half_frame)):
+                for first_id, first_info in first_half_frame.items():
+                    eighteen_yard_frame = eighteen_yard[frame_num]
+                    eighteen_yard_circle_frame = eighteen_yard_circle[frame_num]
+                    five_yard_frame = five_yard[frame_num]
+                    
+                    for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
+                        eighteen_yard_bbox = eighteen_yard_info['bbox']
+                        intersections = tracks["Key Points"][frame_num]["points"]
+                        top_18yard_point = bboxUtils.get_top_right(eighteen_yard_bbox)
+                        top_18yard_point = (top_18yard_point[0], top_18yard_point[1] + 40)
+                        if self.is_intersection_present(intersections, top_18yard_point, 100) is not False:
+                            tracks["Key Points"][frame_num]["Left Top 18Yard Point"] = self.is_intersection_present(intersections, top_18yard_point, 100)
+
+                    for five_yard_id, five_yard_info in five_yard_frame.items():
+                        five_yard_bbox = five_yard_info['bbox']
+                        intersections = tracks["Key Points"][frame_num]["points"]
+                        top_left_five_yard_point = bboxUtils.get_top_right(five_yard_bbox)
+                        top_left_five_yard_point = (top_left_five_yard_point[0], top_left_five_yard_point[1] + 30)
+                        if self.is_intersection_present(intersections, top_left_five_yard_point, 100) is not False:
+                            tracks["Key Points"][frame_num]["Left Top 5Yard Point"] = self.is_intersection_present(intersections, top_left_five_yard_point, 100)
+                        else:
+                            tracks["Key Points"][frame_num]["Left Top 5Yard Point"] = top_left_five_yard_point
+
+                    for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
+                        eighteen_yard_bbox = eighteen_yard_info['bbox']
+                        for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
+                            intersections = tracks["Key Points"][frame_num]["points"]
+                            eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
+                            if bboxUtils.is_bbox_inside(eighteen_yard_bbox, eighteen_yard_circle_bbox):
+                                bottom_18_yard_circle_point = bboxUtils.get_bottom_left(eighteen_yard_circle_bbox)
+                                tracks["Key Points"][frame_num]["Left Bottom 18Yard Circle Point"] = bottom_18_yard_circle_point
+
+                    for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
+                        intersections = tracks["Key Points"][frame_num]["points"]
+                        eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
+                        top_18yard_circle_point = bboxUtils.get_top_right(eighteen_yard_circle_bbox)
+                        top_18yard_circle_point = (top_18yard_circle_point[0] - 40, top_18yard_circle_point[1])
+                        if self.is_intersection_present(intersections, top_18yard_circle_point, 150) is not False:
+                            tracks["Key Points"][frame_num]["Left Top 18Yard Circle Point"] = self.is_intersection_present(intersections, top_18yard_circle_point, 150)
+                        else:
+                            top_left_point = bboxUtils.get_top_right(eighteen_yard_circle_bbox)
+                            top_right_point = bboxUtils.get_top_left(eighteen_yard_circle_bbox)
+                            left_top_18yard_point = tracks["Key Points"][frame_num].get("Left Top 18Yard Point")
+                            left_bottom_18yard_circle_point = tracks["Key Points"][frame_num].get("Left Bottom 18Yard Circle Point")
+                            if left_top_18yard_point and left_bottom_18yard_circle_point:
+                                # Calculate the intersection point of the two lines: bottom-right to bottom-left and left_top to left_bottom_circle
+                                x1, y1 = top_right_point
+                                x2, y2 = top_left_point
+                                x3, y3 = left_top_18yard_point
+                                x4, y4 = left_bottom_18yard_circle_point
+
+                                denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+                                if denom != 0:
+                                    px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+                                    py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+                                    intersection_point = (int(px), int(py))
+                                    tracks["Key Points"][frame_num]["Left Top 18Yard Circle Point"] = intersection_point
+
+                    for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
+                        eighteen_yard_bbox = eighteen_yard_info['bbox']
+                        intersections = tracks["Key Points"][frame_num]["points"]
+
+                        # Get the bottom-right and bottom-left points of the 18-yard bounding box
+                        bottom_left_point = bboxUtils.get_bottom_right(eighteen_yard_bbox)
+                        bottom_right_point = bboxUtils.get_bottom_left(eighteen_yard_bbox)
+
+                        # Get the "Left Top 18Yard Point" and "Left Bottom 18Yard Circle Point" points
+                        left_top_18yard_point = tracks["Key Points"][frame_num].get("Left Top 18Yard Point")
+                        left_bottom_18yard_circle_point = tracks["Key Points"][frame_num].get("Left Bottom 18Yard Circle Point")
+
+                        if left_top_18yard_point and left_bottom_18yard_circle_point:
+                            # Calculate the intersection point of the two lines
+                            x1, y1 = bottom_right_point
+                            x2, y2 = bottom_left_point
+                            x3, y3 = left_top_18yard_point
+                            x4, y4 = left_bottom_18yard_circle_point
+
+                            denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+                            if denom != 0:
+                                px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+                                py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+                                intersection_point = (px, py)
+
+                                # Check if intersection point is within the bounding box formed by the lines
+                                x_min = min(x1, x2, x3, x4)
+                                x_max = max(x1, x2, x3, x4)
+                                y_min = min(y1, y2, y3, y4)
+                                y_max = max(y1, y2, y3, y4)
+
+                                if x_min <= px <= x_max and y_min <= py <= y_max:
+                                    # Check if intersection point is present in intersections
+                                    if self.is_intersection_present(intersections, intersection_point, 150) is not False:
+                                        tracks["Key Points"][frame_num]["Left Bottom 18Yard Point"] = self.is_intersection_present(intersections, intersection_point, 150)
+
+        list_of_points = ["Left Top 18Yard Point","Left Top 18Yard Circle Point","Left Bottom 18Yard Circle Point", "Left Top 5Yard Point","Left Bottom 18Yard Point"]
+        max_missing_frames = 60
+        self.interpolate_points(tracks, max_missing_frames, list_of_points)
+        return tracks
+
 
     def find_right_field_intersections(self, tracks):
         first_half = tracks.get("First Half Field", [])
@@ -336,7 +444,5 @@ class SuperAlgorithm:
         width = bbox[2] - bbox[0]
         height = bbox[3] - bbox[1]
         return width * height
-    def find_left_field_intersections(self, tracks):
-            # Implementation for future use
-            pass
+    
 

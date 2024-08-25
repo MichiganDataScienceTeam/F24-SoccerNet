@@ -71,8 +71,6 @@ class CameraMovementEstimator():
                     # Ensure both points are valid and have the correct format
                     if point_current is not None and point_previous is not None and len(point_current) == 2 and len(point_previous) == 2:
                         # Calculate the movement (difference) between the consecutive frames
-                        print(point_current[0])
-                        print(point_previous[0])
                         movement_x = point_current[0] - point_previous[0]
                         movement_y = point_current[1] - point_previous[1]
 
