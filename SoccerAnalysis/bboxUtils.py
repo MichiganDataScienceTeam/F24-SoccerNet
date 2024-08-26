@@ -53,3 +53,11 @@ def is_bbox_inside(outer_bbox, inner_bbox):
             x1_out <= x2_in <= x2_out and
             y1_out <= y1_in <= y2_out and
             y1_out <= y2_in <= y2_out)
+
+def calculate_bbox_size(bbox):
+        return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+
+def is_bbox_not_none(bbox):
+        if bbox is None:
+            return False
+        return True

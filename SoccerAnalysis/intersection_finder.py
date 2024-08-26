@@ -6,6 +6,7 @@ class SuperAlgorithm:
     def __init__(self):
         pass
 
+    # Find all intersection points in left field
     def find_left_field_intersections(self, tracks):
         first_half = tracks.get("First Half Field", [])
         second_half = tracks.get("Second Half Field", [])
@@ -13,13 +14,16 @@ class SuperAlgorithm:
         eighteen_yard = tracks.get("18Yard", [])
         five_yard = tracks.get("5Yard", [])
 
+        
         for frame_num, (first_half_frame, second_half_frame) in enumerate(zip(first_half, second_half)):
             if not second_half_frame and first_half_frame or (first_half_frame and second_half_frame and self.is_bigger_bbox(first_half_frame, second_half_frame)):
+                # get intersection points in first half 
                 for first_id, first_info in first_half_frame.items():
                     eighteen_yard_frame = eighteen_yard[frame_num]
                     eighteen_yard_circle_frame = eighteen_yard_circle[frame_num]
                     five_yard_frame = five_yard[frame_num]
                     
+                    # get top right intersection in 18 yard box  
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
                         intersections = tracks["Key Points"][frame_num]["points"]
@@ -28,6 +32,7 @@ class SuperAlgorithm:
                         if self.is_intersection_present(intersections, top_18yard_point, 100) is not False:
                             tracks["Key Points"][frame_num]["Left Top 18Yard Point"] = self.is_intersection_present(intersections, top_18yard_point, 100)
 
+                    # get top left intersection in 5 yard box 
                     for five_yard_id, five_yard_info in five_yard_frame.items():
                         five_yard_bbox = five_yard_info['bbox']
                         intersections = tracks["Key Points"][frame_num]["points"]
@@ -38,6 +43,7 @@ class SuperAlgorithm:
                         else:
                             tracks["Key Points"][frame_num]["Left Top 5Yard Point"] = top_left_five_yard_point
 
+                    # get bottom left intersection in 18 yard circle 
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
                         for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
@@ -47,6 +53,7 @@ class SuperAlgorithm:
                                 bottom_18_yard_circle_point = bboxUtils.get_bottom_left(eighteen_yard_circle_bbox)
                                 tracks["Key Points"][frame_num]["Left Bottom 18Yard Circle Point"] = bottom_18_yard_circle_point
 
+                    # get top right intersection in 18yard circle 
                     for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
                         intersections = tracks["Key Points"][frame_num]["points"]
                         eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
@@ -73,20 +80,18 @@ class SuperAlgorithm:
                                     intersection_point = (int(px), int(py))
                                     tracks["Key Points"][frame_num]["Left Top 18Yard Circle Point"] = intersection_point
 
+                     # get the left top 18 yard point and left bottom 18 yard circle point
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
                         intersections = tracks["Key Points"][frame_num]["points"]
 
-                        # Get the bottom-right and bottom-left points of the 18-yard bounding box
                         bottom_left_point = bboxUtils.get_bottom_right(eighteen_yard_bbox)
                         bottom_right_point = bboxUtils.get_bottom_left(eighteen_yard_bbox)
 
-                        # Get the "Left Top 18Yard Point" and "Left Bottom 18Yard Circle Point" points
                         left_top_18yard_point = tracks["Key Points"][frame_num].get("Left Top 18Yard Point")
                         left_bottom_18yard_circle_point = tracks["Key Points"][frame_num].get("Left Bottom 18Yard Circle Point")
 
                         if left_top_18yard_point and left_bottom_18yard_circle_point:
-                            # Calculate the intersection point of the two lines
                             x1, y1 = bottom_right_point
                             x2, y2 = bottom_left_point
                             x3, y3 = left_top_18yard_point
@@ -114,7 +119,7 @@ class SuperAlgorithm:
         self.interpolate_points(tracks, max_missing_frames, list_of_points)
         return tracks
 
-
+    # find right field intersection (exact same as left but inverted)
     def find_right_field_intersections(self, tracks):
         first_half = tracks.get("First Half Field", [])
         second_half = tracks.get("Second Half Field", [])
@@ -224,6 +229,7 @@ class SuperAlgorithm:
         self.interpolate_points(tracks, max_missing_frames, list_of_points)
         return tracks
 
+    # this will get the absolute top and bottom intersections of half field
     def find_outer_intersections(self,tracks):
         first_half = tracks.get("First Half Field", [])
         second_half = tracks.get("Second Half Field", [])
@@ -258,6 +264,7 @@ class SuperAlgorithm:
 
         return tracks
     
+    # find the intersections in the middle circle 
     def find_middle_intersections(self, tracks):
         first_half_central = tracks.get("First Half Central Circle", [])
         second_half_central = tracks.get("Second Half Central Circle", [])
@@ -301,7 +308,6 @@ class SuperAlgorithm:
                                 right_circle_point = bboxUtils.get_right_middle(second_bbox)
                                 tracks["Key Points"][frame_num]["Right Circle Point"] = tuple(map(int, right_circle_point))
                         
-        #interpolate missing circle points
         once_or_twice = True
         list_of_points = ["Top Circle Point", "Bottom Circle Point", "Left Circle Point", "Right Circle Point"]
         max_missing_frames = 30
@@ -325,6 +331,7 @@ class SuperAlgorithm:
         
         return tracks
 
+    # add center intersections to tracks 
     def add_center_intersection(self, tracks, frame_num):
         top_circle_point = tracks["Key Points"][frame_num]["Top Circle Point"]
         bottom_circle_point = tracks["Key Points"][frame_num]["Bottom Circle Point"]
@@ -332,8 +339,9 @@ class SuperAlgorithm:
         middle_point = (middle_point[0], middle_point[1] - 15)
         tracks["Key Points"][frame_num]["Center Circle Point"] = middle_point
     
+    # add top and bottome points in the center to the tracks  
     def add_top_bottom_middle_intersections(self, tracks, frame_num, first_bbox, second_bbox, once_or_twice):
-        # Define the top and bottom areas of interest
+        
         top_circle_point = bboxUtils.get_midpoint(bboxUtils.get_top_right(first_bbox), bboxUtils.get_top_left(second_bbox))
         bottom_circle_point = bboxUtils.get_midpoint(bboxUtils.get_bottom_right(first_bbox), bboxUtils.get_bottom_left(second_bbox))
         confirmed_top_circle_point = None
@@ -374,13 +382,14 @@ class SuperAlgorithm:
             else:
                 tracks["Key Points"][frame_num]["Bottom Circle Point"] = None
 
-    
+    # Checks if an intersection is close to a point via a threshold distance
     def is_intersection_present(self, intersections, point, threshold):
         for intersection in intersections:
             if bboxUtils.measure_distance(intersection, point) <= threshold:
                 return intersection
         return False
     
+    # Interpolates points withing mac_missing_frames limit
     def interpolate_points(self, tracks, max_missing_frames, list_of_points):
         key_points = tracks.get("Key Points", [])
 
@@ -402,6 +411,7 @@ class SuperAlgorithm:
                     else:
                         key_points[frame_idx][point_name] = tuple(map(int, point))
 
+    # Helper function for interpolate_points
     def interpolate_within_limits(self, df, max_missing_frames):
         nan_groups = df.isna().all(axis=1).astype(int).groupby(df.notna().all(axis=1).cumsum()).cumsum()
 
@@ -410,6 +420,7 @@ class SuperAlgorithm:
             df_interpolated.iloc[start-1:end+1] = df.iloc[start-1:end+1].interpolate()
         return df_interpolated
 
+    # finds nan gaps in tracks  
     def find_nan_gaps(self, nan_groups, max_missing_frames):
         gaps = []
         current_start = None
@@ -422,27 +433,25 @@ class SuperAlgorithm:
                 current_start = None
         return gaps
 
+    # Returns true if boxes are a similar width by amount
     def are_boxes_similar_width(self, bbox1, bbox2, amount):
         first_width = bboxUtils.get_bbox_width(bbox1)
         second_width = bboxUtils.get_bbox_width(bbox2)
         return abs(first_width - second_width) <= amount
 
+    # Returns true if the second_half_frame is bigger than the first_half_frame
     def is_bigger_bbox(self, second_half_frame, first_half_frame):
         for second_id, second_info in second_half_frame.items():
             second_bbox = second_info['bbox']
-            second_area = self.calculate_bbox_area(second_bbox)
+            second_area = bboxUtils.calculate_bbox_size(second_bbox)
             
             for first_id, first_info in first_half_frame.items():
                 first_bbox = first_info['bbox']
-                first_area = self.calculate_bbox_area(first_bbox)
+                first_area = bboxUtils.calculate_bbox_size(first_bbox)
                 
                 if second_area > first_area:
                     return True
         return False
 
-    def calculate_bbox_area(self, bbox):
-        width = bbox[2] - bbox[0]
-        height = bbox[3] - bbox[1]
-        return width * height
     
 

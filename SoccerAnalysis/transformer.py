@@ -1,10 +1,9 @@
 import numpy as np 
 import cv2
-import os
-import pickle
+
 
 class ViewTransformer():
-    def __init__(self, tracks, camera_movement, field_length, field_width):
+    def __init__(self, camera_movement, field_length, field_width):
         self.key_points = ["Right Top 18Yard Point", "Right Top 18Yard Circle Point", "Right Bottom 18Yard Circle Point", 
                   "Right Top 5Yard Point", "Right Bottom 18Yard Point", "Top Circle Point", "Bottom Circle Point", 
                   "Left Circle Point", "Right Circle Point", "Center Circle Point", "Top Center Point", "Bottom Center Point"]
@@ -30,11 +29,7 @@ class ViewTransformer():
         self.homographies = {}
         self.camera_movement = camera_movement
 
-
-    def apply_past_player_positions():
-        print()
-
-
+    # Extracts the key points from the tracks 
     def extract_points_from_tracks(self, tracks, frame_num):
         seen_points = []
         field_points = []
@@ -47,9 +42,7 @@ class ViewTransformer():
                     field_points.append([point_in_field[0], point_in_field[1]])
         return (np.array(seen_points, dtype=np.float32), np.array(field_points, dtype=np.float32))
 
-
-
-
+    # applies a homography throughout all the frames
     def apply_homography(self, frames, tracks, read_from_stub=False, stub_path=None):
         found_center = False
         for frame_num in range(len(frames)):
@@ -89,14 +82,11 @@ class ViewTransformer():
                             position = track_info.get('position')
                             if position:
                                 player_positions.append(np.array(position))
-                        
-                        # Extract referee positions from the previous frame
 
                         #get the camera movement for this frame
                         current_camera_movement = np.array(self.camera_movement[frame_num])
 
-                        #subtract or add idk the position from the camera movement to 
-                        #simulate those position to this frame
+                        #add the position from the camera movement to simulate those position to this frame
                         adjusted_positions_to_current_frame = [position + current_camera_movement for position in player_positions]
 
                     
@@ -123,7 +113,7 @@ class ViewTransformer():
                 
                 #use those to do a homography on this frame. then move on
 
-
+    # Use homography matrix to transform a point
     def transform_point(self, point, frame_num):
         if frame_num in self.homographies:
             M = self.homographies[frame_num]
@@ -134,7 +124,7 @@ class ViewTransformer():
                 return transformed_point[:2]
         return None
         
-
+    # Add all transformed positions to tracks 
     def add_transformed_position_to_tracks(self, tracks):
         for object, object_tracks in tracks.items():
             for frame_num, track in enumerate(object_tracks):
@@ -157,6 +147,7 @@ class ViewTransformer():
 
                         tracks["Key Points"][frame_num][key_point + ' Transformed'] = point_transformed
 
+    # draw transformed positions to video
     def draw_transformed_position(self, frames, tracks):
         output_frames = []
         for frame_num, frame in enumerate(frames):

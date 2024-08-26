@@ -9,6 +9,7 @@ class WhiteLineDetector:
     def __init__(self):
         self.intersections = []
 
+
     def detect_edges(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -19,10 +20,12 @@ class WhiteLineDetector:
         
         return edges
 
+    # detects hough lines
     def detect_lines(self, edges):
         lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=100, maxLineGap=20)
         return lines
 
+    # will ge tthe dominant green colors on the field
     def get_dominant_green_colors(self, image, k=2):
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         pixels = hsv.reshape(-1, 3)
@@ -42,6 +45,7 @@ class WhiteLineDetector:
 
         return green_colors
 
+    # Returns true if a point is near green colors 
     def is_near_green(self, image, x1, y1, x2, y2, green_colors):
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
@@ -63,6 +67,7 @@ class WhiteLineDetector:
         green_pixels = cv2.countNonZero(masked_line)
         return green_pixels > 0
 
+    # Returns true if a point is close to an edge
     def is_close_to_edge(self, image, x1, y1, x2, y2, edge_threshold=5):
         height, width = image.shape[:2]
         return (x1 < edge_threshold or x2 < edge_threshold or
@@ -70,6 +75,7 @@ class WhiteLineDetector:
                 x1 > width - edge_threshold or x2 > width - edge_threshold or
                 y1 > height - edge_threshold or y2 > height - edge_threshold)
 
+    # filters all detected lines that are no near green or close to edges
     def filter_lines(self, lines, image, green_colors):
         filtered_lines = []
         if lines is not None:
@@ -80,16 +86,14 @@ class WhiteLineDetector:
                     filtered_lines.append(line)
         return filtered_lines
 
+    # calculate angles between lines using vectors 
     def angle_between_lines(self, line1, line2):
-        # Calculate the angle between two lines
         x1, y1, x2, y2 = line1[0]
         x3, y3, x4, y4 = line2[0]
         
-        # Direction vectors of the lines
         vec1 = np.array([x2 - x1, y2 - y1])
         vec2 = np.array([x4 - x3, y4 - y3])
         
-        # Normalize the direction vectors
         unit_vec1 = vec1 / np.linalg.norm(vec1)
         unit_vec2 = vec2 / np.linalg.norm(vec2)
         
@@ -99,6 +103,7 @@ class WhiteLineDetector:
         
         return angle
 
+    # Finds a large list of intersection points
     def find_intersections(self, lines):
         intersections = []
         if lines is None:
@@ -130,6 +135,7 @@ class WhiteLineDetector:
         self.intersections.extend(intersections)
         return intersections
 
+    # Combines overlapping intersections 
     def combine_close_intersections(self, intersections, distance_threshold=80):
         if len(intersections) == 0:
             return intersections
@@ -146,93 +152,19 @@ class WhiteLineDetector:
 
         return combined_intersections
 
+    # Draws intersection points on images 
     def draw_intersections(self, image, intersections):
         for point in intersections:
             cv2.circle(image, point, 5, (0, 0, 255), -1)
-
-    def find_field_boundary(self, image, green_colors):
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        masks = [cv2.inRange(hsv, color - np.array([10, 50, 50]), color + np.array([10, 255, 255])) for color in green_colors]
-        if len(masks) == 0:
-            return None
-        elif len(masks) == 1:
-            mask = masks[0]
-        else:
-            mask = cv2.bitwise_or(masks[0], masks[1])
-
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-
-        # Apply a large dilation to create a thick boundary
-        kernel = np.ones((30, 30), np.uint8)
-        dilated_mask = cv2.dilate(mask, kernel, iterations=1)
-
-        # Use Canny edge detector to find edges
-        edges = cv2.Canny(dilated_mask, 50, 150)
-
-        # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if contours:
-            # Return the longest contour which should be the field boundary
-            return max(contours, key=lambda c: cv2.arcLength(c, True))
-        return None
-
-    def get_line_of_best_fit(self, contour, image_shape):
-        x = contour[:, 0, 0].reshape(-1, 1)
-        y = contour[:, 0, 1].reshape(-1, 1)
-
-        model = LinearRegression()
-        model.fit(x, y)
-
-        # Find the highest point
-        highest_point = tuple(contour[contour[:, :, 1].argmin()][0])
-
-        # Determine the x-coordinate of the highest point
-        highest_x = highest_point[0]
-
-        # Predict y-values at the left and right edges of the image
-        y_pred_left = model.predict(np.array([[0]]))[0][0]
-        y_pred_right = model.predict(np.array([[image_shape[1]]]))[0][0]
-
-        # Determine the y-value at the highest point using the linear model
-        y_pred_highest = model.predict(np.array([[highest_x]]))[0][0]
-
-        # Calculate the offset between the actual highest point y-value and the predicted y-value
-        offset = highest_point[1] - y_pred_highest
-
-        # Adjust the predicted y-values using the offset
-        y_pred_left += offset
-        y_pred_right += offset
-
-        start_point = (0, int(y_pred_left))
-        end_point = (image_shape[1], int(y_pred_right))
-
-        return start_point, end_point, lambda x, y: y >= model.predict([[x]])[0][0] + offset
     
-
-    def is_contour_close_to_edges(self, image, contour, edge_threshold=5):
-        height, width = image.shape[:2]
-
-        # Find the leftmost and rightmost points
-        leftmost_point = tuple(contour[contour[:, :, 0].argmin()][0])
-        rightmost_point = tuple(contour[contour[:, :, 0].argmax()][0])
-        
-        return ((leftmost_point[0] < edge_threshold or leftmost_point[0] > width - edge_threshold or
-                leftmost_point[1] < edge_threshold or leftmost_point[1] > height - edge_threshold) and
-                (rightmost_point[0] < edge_threshold or rightmost_point[0] > width - edge_threshold or
-                rightmost_point[1] < edge_threshold or rightmost_point[1] > height - edge_threshold))
-    def draw_field_boundary(self, image, field_contour):
-        cv2.drawContours(image, [field_contour], -1, (255, 0, 255), 3)  # Draw boundary in purple (BGR: 255, 0, 255)
-
-    def draw_line_of_best_fit(self, image, start_point, end_point):
-        cv2.line(image, start_point, end_point, (0, 255, 255), 3)  # Draw line in yellow (BGR: 0, 255, 255)
-
-
+    # Returns true if a point is in a bbox 
     def is_point_in_bbox(self, point, bbox, margin=8):
         x, y = point
         x1, y1, x2, y2 = map(int, bbox)
         return (x1 - margin) <= x <= (x2 + margin) and (y1 - margin) <= y <= (y2 + margin)
 
-
+    # Can be used to get a single image 
+    # Only runs on this class locally
     def process_image(self, frame):
         all_intersections = []
         green_colors = self.get_dominant_green_colors(frame)
@@ -254,8 +186,7 @@ class WhiteLineDetector:
 
         return frame
     
-
-
+    # filters intersections to be in halfs and outside players and refs 
     def filter_intersections(self, intersections, player_dict, referee_dict, first_half_dict, second_half_dict):
         filtered_intersections = []
         for point in intersections:
@@ -280,7 +211,7 @@ class WhiteLineDetector:
         return filtered_intersections
 
 
-
+    # This is the driver and collects all intersections points 
     def get_intersections(self, frames, tracks, save_path=None, load_path=None):
         if load_path and os.path.exists(load_path):
             with open(load_path, 'rb') as f:
@@ -320,6 +251,7 @@ class WhiteLineDetector:
 
         return tracks
     
+    # Draws all collected and relevant intersections on the tracks 
     def draw_frame_intersections(self, frames, tracks):
         output_frames = []
         for frame_num, frame in enumerate(frames):
@@ -337,7 +269,7 @@ class WhiteLineDetector:
                     cv2.circle(frame, top_circle_point, 20, (0, 255, 0), -1)
                     cv2.putText(frame, "Top Circle Point", (top_circle_point[0], top_circle_point[1] + 30), 
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            # Check for "Bottom Circle Point" and draw it if present
+
             if "Bottom Circle Point" in tracks["Key Points"][frame_num]:
                 bottom_circle_point = tracks["Key Points"][frame_num]["Bottom Circle Point"]
                 if bottom_circle_point is not None:
@@ -429,6 +361,8 @@ class WhiteLineDetector:
             output_frames.append(frame)
         
         return output_frames
+    
+    # Can be used for drawing the lines and contours for debugging
     def draw_frame_lines_and_contours(self, frames, tracks):
         output_frames = []
         for frame_num, frame in enumerate(frames):
@@ -463,6 +397,8 @@ class WhiteLineDetector:
             output_frames.append(frame)
         
         return output_frames
+    
+    # Calculate distances between intersection points 
     def calculate_distances(self):
         distances = []
         for i in range(1, len(self.intersections)):

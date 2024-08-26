@@ -14,7 +14,7 @@ class Tracker:
         self.model_id = f"{project_name}/{version_number}"
         self.tracker = sv.ByteTrack()
 
-    def __init__(self, player_api_key, player_project_name, player_version_number, boxes_api_key, boxes_project_name, boxes_version_number, points_version_number):
+    def __init__(self, player_api_key, player_project_name, player_version_number, boxes_api_key, boxes_project_name, boxes_version_number):
         self.player_client = InferenceHTTPClient(api_url="https://detect.roboflow.com", api_key=player_api_key)
         self.player_model_id = f"{player_project_name}/{player_version_number}"
 
@@ -23,18 +23,7 @@ class Tracker:
 
         self.tracker = sv.ByteTrack()
     
-    
-    def preprocess_image(self, image, target_size=(640, 640)):
-    # Resize the image to the target size
-        self.original_size = (image.shape[1], image.shape[0])
-        
-        image_resized = cv2.resize(image, target_size)
-        return image_resized
-    
-    def resize_back_to_original(self, image):
-        # Resize the image back to the original size
-        return cv2.resize(image, self.original_size)
-    
+    # Adds pixels positions to tracks 
     def add_position_to_tracks(self,tracks):
         for object, object_tracks in tracks.items():
             for frame_num, track in enumerate(object_tracks):
@@ -47,8 +36,7 @@ class Tracker:
                         position = bboxUtils.get_foot_position(bbox)
                         tracks[object][frame_num][track_id]['position'] = position
         
-    
-    
+    # Creates the tracks with all the detections 
     def detect_frames(self, frames):
         detections = []
         for frame in frames:
@@ -217,6 +205,8 @@ class Tracker:
             print("Saved tracks to stub:", stub_path)
 
         return tracks
+    
+    # Annotates a rectangle
     def draw_rectangle(self, frame, bbox, color=(255, 0, 0), thickness=2, label=None):
         x1, y1, x2, y2 = map(int, bbox)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
@@ -224,6 +214,7 @@ class Tracker:
             cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
         return frame
 
+    # Annotates an Ellipse
     def draw_ellipse(self, frame, bbox, color, track_id=None):
         y2 = int(bbox[3])
         x_center, _ = bboxUtils.get_center_of_bbox(bbox)
@@ -260,7 +251,7 @@ class Tracker:
         return frame
     
         
-
+    # Annotates a Triangle 
     def draw_triangle(self, frame, bbox, color):
         y = int(bbox[1])
         x, _ = bboxUtils.get_center_of_bbox(bbox)
@@ -274,61 +265,8 @@ class Tracker:
         cv2.drawContours(frame, [triangle_points], 0, (0, 0, 0), 2)
 
         return frame
-    '''
-    def draw_team_ball_control(self, frame, frame_num, team_ball_control):
-        # Draw a semi-transparent rectangle
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (1350, 850), (1900, 970), (255, 255, 255), -1)
-        alpha = 0.4
-        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
-        team_ball_control_till_frame = team_ball_control[:frame_num + 1]
-        # Get the number of time each team had ball control
-        team_1_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==1].shape[0]
-        team_2_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==2].shape[0]
-        team_1 = team_1_num_frames/(team_1_num_frames+team_2_num_frames)
-        team_2 = team_2_num_frames/(team_1_num_frames+team_2_num_frames)
-
-        cv2.putText(frame, f"Team 1 Ball Control: {team_1*100:.2f}%",(1400,900), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
-        cv2.putText(frame, f"Team 2 Ball Control: {team_2*100:.2f}%",(1400,950), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
-
-        return frame
-    
-    def scale_points(self, points):
-            scale_x = self.original_size[0] / 640 #self.target_size[0]
-            scale_y = self.original_size[1] / 640 #self.target_size[1]
-            return [{'x': int(point['x'] * scale_x), 'y': int(point['y'] * scale_y)} for point in points]
-    '''
-    def scale_points(tracker, points, original_size, target_size, x_scale, y_scale):
-        #print(f"tracker: {tracker}")
-        #print(f"points: {points}")
-        #print(f"Original size: {original_size}")
-        #print(f"Target size: {target_size}")
-        if isinstance(original_size, tuple) and len(original_size) == 2:
-            original_width, original_height = original_size
-        else:
-            raise ValueError("original_size should be a tuple with two elements (width, height)")
-
-        if isinstance(target_size, tuple) and len(target_size) == 2:
-            target_width, target_height = target_size
-        else:
-            raise ValueError("target_size should be a tuple with two elements (width, height)")
- 
-        scale_x = original_width / x_scale  #890
-        scale_y = original_height / y_scale #1320
-
-        
-
-        scaled_points = []
-        for point in points:
-            scaled_x = int(point['x'] * scale_x)
-            scaled_y = int(point['y'] * scale_y)
-            scaled_points.append({'x': scaled_x, 'y': scaled_y})
-
-        return scaled_points
-
-        
-
+    # Draws all detection annotations in the video
     def draw_annotations(self, video_frames, tracks):
         output_video_frames = []
         for frame_num, frame in enumerate(video_frames):
@@ -384,18 +322,9 @@ class Tracker:
             for track_id, circle in eighteen_yard_circle_dict.items():
                 frame = self.draw_rectangle(frame, circle["bbox"], (255, 0, 0), 2, "eighteen_yard_circle")
             
-
-            # Draw field boxes and circles
-            
-            # Draw Team Ball Control
-            #frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
-            
             output_video_frames.append(frame)
 
         return output_video_frames
-
-
-
 
 # Usage example:
 # tracker = Tracker(api_key='your_api_key', project_name='your_project_name', version_number='your_version_number')
