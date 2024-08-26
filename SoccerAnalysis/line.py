@@ -9,6 +9,78 @@ class WhiteLineDetector:
     def __init__(self):
         self.intersections = []
 
+    # This is the driver and collects all intersections points 
+    def get_intersections(self, frames, tracks, save_path=None, load_path=None):
+        if load_path and os.path.exists(load_path):
+            with open(load_path, 'rb') as f:
+                loaded_tracks = pickle.load(f)
+            print(f"Loaded tracks from {load_path}")
+            return loaded_tracks
+
+        all_intersections = []
+        for frame_num, frame in enumerate(frames):
+            green_colors = self.get_dominant_green_colors(frame)
+
+            edges = self.detect_edges(frame)
+            lines = self.detect_lines(edges)
+            filtered_lines = self.filter_lines(lines, frame, green_colors)
+            intersections = self.find_intersections(filtered_lines)
+            combined_intersections = self.combine_close_intersections(intersections)
+            
+            # Filter out intersections inside player bounding boxes
+            first_half_dict = tracks["First Half Field"][frame_num]
+            second_half_dict = tracks["Second Half Field"][frame_num]
+            player_dict = tracks["players"][frame_num]
+            referee_dict = tracks["referees"][frame_num]
+            filtered_intersections = self.filter_intersections(combined_intersections, player_dict, referee_dict, first_half_dict, second_half_dict)
+            all_intersections.append(filtered_intersections)
+                
+            tracks["Key Points"][frame_num]["points"] = filtered_intersections
+            tracks["Key Points"][frame_num]["lines"] = filtered_lines
+            tracks["Key Points"][frame_num]["edges"] = edges
+
+        self.intersections = all_intersections
+
+        # Save tracks to a file if specified
+        if save_path:
+            with open(save_path, 'wb') as f:
+                pickle.dump(tracks, f)
+            print(f"Saved tracks to {save_path}")
+
+        return tracks
+
+    # Finds a large list of intersection points
+    def find_intersections(self, lines):
+        intersections = []
+        if lines is None:
+            return intersections
+        
+        for i in range(len(lines)):
+            for j in range(i + 1, len(lines)):
+                x1, y1, x2, y2 = lines[i][0]
+                x3, y3, x4, y4 = lines[j][0]
+                
+                # Calculate the intersection point
+                denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+                if denom == 0:
+                    continue
+                
+                intersect_x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+                intersect_y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+                
+                if (min(x1, x2) <= intersect_x <= max(x1, x2) and
+                    min(y1, y2) <= intersect_y <= max(y1, y2) and
+                    min(x3, x4) <= intersect_x <= max(x3, x4) and
+                    min(y3, y4) <= intersect_y <= max(y3, y4)):
+                    
+                    angle = self.angle_between_lines(lines[i], lines[j])
+                    if 20 <= angle <= 135:  # Only keep intersections close to 90 degrees
+                        point = (int(intersect_x), int(intersect_y))
+                        intersections.append(point)
+        
+        self.intersections.extend(intersections)
+        return intersections
+
 
     def detect_edges(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -103,38 +175,6 @@ class WhiteLineDetector:
         
         return angle
 
-    # Finds a large list of intersection points
-    def find_intersections(self, lines):
-        intersections = []
-        if lines is None:
-            return intersections
-        
-        for i in range(len(lines)):
-            for j in range(i + 1, len(lines)):
-                x1, y1, x2, y2 = lines[i][0]
-                x3, y3, x4, y4 = lines[j][0]
-                
-                # Calculate the intersection point
-                denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-                if denom == 0:
-                    continue
-                
-                intersect_x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
-                intersect_y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
-                
-                if (min(x1, x2) <= intersect_x <= max(x1, x2) and
-                    min(y1, y2) <= intersect_y <= max(y1, y2) and
-                    min(x3, x4) <= intersect_x <= max(x3, x4) and
-                    min(y3, y4) <= intersect_y <= max(y3, y4)):
-                    
-                    angle = self.angle_between_lines(lines[i], lines[j])
-                    if 20 <= angle <= 135:  # Only keep intersections close to 90 degrees
-                        point = (int(intersect_x), int(intersect_y))
-                        intersections.append(point)
-        
-        self.intersections.extend(intersections)
-        return intersections
-
     # Combines overlapping intersections 
     def combine_close_intersections(self, intersections, distance_threshold=80):
         if len(intersections) == 0:
@@ -210,46 +250,6 @@ class WhiteLineDetector:
 
         return filtered_intersections
 
-
-    # This is the driver and collects all intersections points 
-    def get_intersections(self, frames, tracks, save_path=None, load_path=None):
-        if load_path and os.path.exists(load_path):
-            with open(load_path, 'rb') as f:
-                loaded_tracks = pickle.load(f)
-            print(f"Loaded tracks from {load_path}")
-            return loaded_tracks
-
-        all_intersections = []
-        for frame_num, frame in enumerate(frames):
-            green_colors = self.get_dominant_green_colors(frame)
-
-            edges = self.detect_edges(frame)
-            lines = self.detect_lines(edges)
-            filtered_lines = self.filter_lines(lines, frame, green_colors)
-            intersections = self.find_intersections(filtered_lines)
-            combined_intersections = self.combine_close_intersections(intersections)
-            
-            # Filter out intersections inside player bounding boxes
-            first_half_dict = tracks["First Half Field"][frame_num]
-            second_half_dict = tracks["Second Half Field"][frame_num]
-            player_dict = tracks["players"][frame_num]
-            referee_dict = tracks["referees"][frame_num]
-            filtered_intersections = self.filter_intersections(combined_intersections, player_dict, referee_dict, first_half_dict, second_half_dict)
-            all_intersections.append(filtered_intersections)
-                
-            tracks["Key Points"][frame_num]["points"] = filtered_intersections
-            tracks["Key Points"][frame_num]["lines"] = filtered_lines
-            tracks["Key Points"][frame_num]["edges"] = edges
-
-        self.intersections = all_intersections
-
-        # Save tracks to a file if specified
-        if save_path:
-            with open(save_path, 'wb') as f:
-                pickle.dump(tracks, f)
-            print(f"Saved tracks to {save_path}")
-
-        return tracks
     
     # Draws all collected and relevant intersections on the tracks 
     def draw_frame_intersections(self, frames, tracks):
