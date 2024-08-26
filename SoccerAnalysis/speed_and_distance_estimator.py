@@ -9,6 +9,7 @@ class SpeedAndDistance_Estimator():
         self.frame_window=5
         self.frame_rate=30
     
+    # Adds players speeds and distance travelled to tracks
     def add_speed_and_distance_to_tracks(self,tracks):
         total_distance= {}
 
@@ -49,6 +50,7 @@ class SpeedAndDistance_Estimator():
                         tracks[object][frame_num_batch][track_id]['speed'] = speed_mph
                         tracks[object][frame_num_batch][track_id]['distance'] = total_distance[object][track_id]
     
+    # Annotates speeds and distances onto the tracks 
     def draw_speed_and_distance(self,frames,tracks):
         output_frames = []
         for frame_num, frame in enumerate(frames):
@@ -79,11 +81,6 @@ class SpeedAndDistance_Estimator():
 
                         if speed is None or distance is None or bbox is None:
                             continue
-                #    if "speed" in track_info:
-                #        speed = track_info.get('speed',None)
-                #        distance = track_info.get('distance',None)
-                #        if speed is None or distance is None:
-                #            continue
                        
                         bbox = track_info['bbox']
                         position = get_foot_position(bbox)

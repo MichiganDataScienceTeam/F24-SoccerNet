@@ -15,11 +15,11 @@ import videoUtils
 
 SOURCE_VIDEO_PATH = "20SecGoodVid.mov"
 TARGET_VIDEO_PATH = "interpolation_test4.mp4"
-PlAYER_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
+PlAYER_API_KEY = ""
 PLAYER_STUB_PATH = "stub_tracks_mid.pkl"
 PLAYER_PROJECT_NAME = "football-players-detection-3zvbc"
 VERSION_NUMBER = 1
-BOXES_API_KEY = "0BgW6TbxAZvjkl4sOMoX"
+BOXES_API_KEY = ""
 BOXES_PROJECT_NAME = "football0detections"
 STUB_FRAMES_PATH = "frames_stub.pkl"
 
@@ -36,7 +36,7 @@ boxes_model = boxes_project.version(VERSION_NUMBER).model
 
 print("Roboflow models initialized")
 
-tracker = Tracker(PlAYER_API_KEY, PLAYER_PROJECT_NAME, VERSION_NUMBER, BOXES_API_KEY, BOXES_PROJECT_NAME, VERSION_NUMBER, VERSION_NUMBER)
+tracker = Tracker(PlAYER_API_KEY, PLAYER_PROJECT_NAME, VERSION_NUMBER, BOXES_API_KEY, BOXES_PROJECT_NAME, VERSION_NUMBER)
 print("Tracker Initialized")
 
 if os.path.exists(STUB_FRAMES_PATH):
@@ -88,7 +88,7 @@ camera_movement_estimator.add_adjust_positions_to_tracks(tracks,camera_movement_
 
 
 print("Computing Homography")
-view_transformer = ViewTransformer(tracks, camera_movement_per_frame, field_length=105, field_width=68)
+view_transformer = ViewTransformer(camera_movement_per_frame, field_length=105, field_width=68)
 view_transformer.apply_homography(frames, tracks)
 
 print("Adding Transformed Position To Tracks")

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import bboxUtils
 
 class Interpolator:
     def __init__(self):
@@ -8,6 +9,7 @@ class Interpolator:
         self.checked_half_1 = False
         self.checked_half_2 = False
 
+    # Interpolate necessary intersection points (main driver)
     def interpolate_missing_bboxes(self, tracks, max_missing_frames=15, size_change_threshold=0.5):
         classes_to_exclude = {"players", "referees", "ball", "Key Points"}
         zero_frames = self.find_zero_frames(tracks)
@@ -22,46 +24,12 @@ class Interpolator:
                 self.process_tracks(object_tracks, track_id, size_change_threshold, max_missing_frames, zero_frames, tracks)
         
         return tracks
+    
 
-    def find_zero_frames(self, tracks):
-        classes_to_exclude = {"players", "referees", "ball", "Key Points"}
-
-        zero_detection_frames = []
-        total_frames = len(next(iter(tracks.values())))
-
-        start_frame = None
-        for frame_idx in range(total_frames):
-            has_detection = False
-            for object_type, object_tracks in tracks.items():
-                if object_type in classes_to_exclude:
-                    continue
-                
-                # Check if any bbox in the current frame for the object type is valid
-                if any(self.is_valid_bbox(track['bbox']) for track in object_tracks[frame_idx].values()):
-                    has_detection = True
-                    break
-            
-            if not has_detection:
-                if start_frame is None:
-                    start_frame = frame_idx
-            else:
-                if start_frame is not None:
-                    zero_detection_frames.append((start_frame, frame_idx - 1))
-                    start_frame = None
-
-        if start_frame is not None:
-            zero_detection_frames.append((start_frame, total_frames - 1))
-        
-        return zero_detection_frames
-
-    def is_valid_bbox(self, bbox):
-        # Check if bbox exists and contains valid coordinates
-        return bbox is not None and not any(np.isnan(coord) for coord in bbox)
-
-
+    # This is the driver for this class and will interpolate detections accordingly 
     def process_tracks(self, object_tracks, track_id, size_change_threshold, max_missing_frames, zero_frames, tracks):
-        # Collect bounding boxes for this track ID across all frames
         
+        # Collect bounding boxes for this track ID across all frames
         bbox_series = [frame_data.get(track_id, {}).get('bbox', None) for frame_data in object_tracks]
 
         # Filter out None values for conversion to DataFrame
@@ -78,7 +46,7 @@ class Interpolator:
         df_bbox_series = self.interpolate_within_limits(df_bbox_series, max_missing_frames)
 
         
-
+        #Debug
         #print(track_id)
 
         if track_id == 7:
@@ -91,16 +59,13 @@ class Interpolator:
         
         if self.first_half_series is not None and self.second_half_series is not None and self.checked_half_1 and self.checked_half_2:
             self.interpolate_half_field(object_tracks, track_id, self.first_half_series, self.second_half_series, zero_frames)
-            
             return
 
         # Convert DataFrame back to list of bounding boxes
-
         bbox_series = df_bbox_series.to_numpy().tolist()
         
-
         # Debug: Print interpolated bounding boxes
-        #print(f"Track ID {track_id} interpolated bounding boxes: {bbox_series}")
+        # print(f"Track ID {track_id} interpolated bounding boxes: {bbox_series}")
         # Update the original tracks with the interpolated bounding boxes
         for frame_idx, bbox in enumerate(bbox_series):
             if not all(np.isnan(bbox)):
@@ -108,7 +73,6 @@ class Interpolator:
                     object_tracks[frame_idx][track_id]['bbox'] = bbox
                 else:
                     object_tracks[frame_idx][track_id] = {'bbox': bbox}
-
 
     def interpolate_half_field(self, object_tracks, track_id, df_first_half, df_second_half, zero_frames):
 
@@ -134,19 +98,17 @@ class Interpolator:
                         object_tracks[frame_idx][track_id] = {'bbox': bbox}
 
 
+    #Fill in all gaps for half field since we need them to always show
     def fill_missing_half_fields(self, df_first_half, df_second_half, zero_frames):
 
         # Find gaps in the data for both half fields
         nan_groups_first = df_first_half.isna().all(axis=1).astype(int).groupby(df_first_half.notna().all(axis=1).cumsum()).cumsum()
         nan_groups_second = df_second_half.isna().all(axis=1).astype(int).groupby(df_second_half.notna().all(axis=1).cumsum()).cumsum()
-        #print(nan_groups_first)
-        #print(nan_groups_second)
+
 
         # Find gaps in both dataframes
         first_gaps = self.find_nan_gaps_no_lim(nan_groups_first, zero_frames)
         second_gaps = self.find_nan_gaps_no_lim(nan_groups_second, zero_frames)
-        #print(first_gaps)
-        #print(second_gaps)
 
         first_idx, second_idx = 0, 0
 
@@ -184,6 +146,44 @@ class Interpolator:
 
         return df_first_half, df_second_half
 
+
+    # Check where there are no detections in a frame (like when the camera pans somewhere else)
+    def find_zero_frames(self, tracks):
+        classes_to_exclude = {"players", "referees", "ball", "Key Points"}
+
+        zero_detection_frames = []
+        total_frames = len(next(iter(tracks.values())))
+
+        start_frame = None
+        for frame_idx in range(total_frames):
+            has_detection = False
+            for object_type, object_tracks in tracks.items():
+                if object_type in classes_to_exclude:
+                    continue
+                
+                # Check if any bbox in the current frame for the object type is valid
+                if any(self.is_valid_bbox(track['bbox']) for track in object_tracks[frame_idx].values()):
+                    has_detection = True
+                    break
+            
+            if not has_detection:
+                if start_frame is None:
+                    start_frame = frame_idx
+            else:
+                if start_frame is not None:
+                    zero_detection_frames.append((start_frame, frame_idx - 1))
+                    start_frame = None
+
+        if start_frame is not None:
+            zero_detection_frames.append((start_frame, total_frames - 1))
+        
+        return zero_detection_frames
+
+    # Check if bbox exists and contains valid coordinates (not nan)
+    def is_valid_bbox(self, bbox):
+        return bbox is not None and not any(np.isnan(coord) for coord in bbox)
+
+    # interpolate ahead until you reach the end_idx
     def interpolate_forward(self, df, start_idx, end_idx):
     
         if start_idx > 0 and end_idx < len(df):
@@ -194,6 +194,7 @@ class Interpolator:
         elif start_idx > 0 and end_idx == len(df):
             df.iloc[start_idx:end_idx] = df.iloc[start_idx - 1]
 
+    #find all the nan_groups using where there are zero detections (don't interpolate)
     def find_nan_gaps_no_lim(self, nan_groups, zero_frames):
         gaps = []
         current_start = None
@@ -211,6 +212,7 @@ class Interpolator:
                 gaps.append(gap)
         return gaps      
 
+    # Checks if a gap is in a zero detections frame
     def is_in_zero_frames(self, gap, zero_frames):
         start, end = gap
         for zero_start, zero_end in zero_frames:
@@ -218,12 +220,14 @@ class Interpolator:
                 return True
         return False
 
+    # Returns all track_ids
     def get_all_track_ids(self, object_tracks):
         track_ids = set()
         for frame_data in object_tracks:
             track_ids.update(frame_data.keys())
         return track_ids
 
+    '''
     def preprocess_zero_detection_frames(self, tracks):
         zero_detection_frames = set()
         total_frames = len(next(iter(tracks.values())))
@@ -235,8 +239,8 @@ class Interpolator:
             ):
                 zero_detection_frames.add(frame_idx)
         return zero_detection_frames
-
-    
+    '''
+    # Interpolates within max_missing_frames limit
     def interpolate_within_limits(self, df, max_missing_frames):
         # Find gaps in the data
         nan_groups = df.isna().all(axis=1).astype(int).groupby(df.notna().all(axis=1).cumsum()).cumsum()
@@ -246,7 +250,8 @@ class Interpolator:
         for start, end in self.find_nan_gaps(nan_groups, max_missing_frames):
             df_interpolated.iloc[start-1:end+1] = df.iloc[start-1:end+1].interpolate()
         return df_interpolated
-
+    
+    # Find frames where there are nans in the dataframe 
     def find_nan_gaps(self, nan_groups, max_missing_frames):
         gaps = []
         current_start = None
@@ -259,6 +264,8 @@ class Interpolator:
                 current_start = None
         return gaps
 
+    # Sometimes detections will go haywire and change sizes for no reason.
+    # This will find those changes and set them to nan
     def handle_dramatic_size_changes(self, df, threshold):
         for i in range(6, len(df) - 6):
             minus6 = df.iloc[i - 6]
@@ -269,22 +276,6 @@ class Interpolator:
             minus2 = df.iloc[i - 2]
             plus2 = df.iloc[i+2]
 
-            '''
-            if self.is_dramatic_difference(minus6, minus1, normal, plus1, plus6, threshold):
-                df.iloc[i-6] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i-5] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i-4] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i-3] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i-2] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+1] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i-1] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+2] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+3] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+4] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+5] = [np.nan, np.nan, np.nan, np.nan]
-                df.iloc[i+6] = [np.nan, np.nan, np.nan, np.nan]
-            '''
             if self.is_consecutive_size_change(minus2, minus1, normal, plus1, plus2, threshold):
                 df.iloc[i] = [np.nan, np.nan, np.nan, np.nan]
                 df.iloc[i-1] = [np.nan, np.nan, np.nan, np.nan]
@@ -295,6 +286,7 @@ class Interpolator:
 
         return df
 
+    '''
     def is_dramatic_difference(self, bbox1, bbox5, bbox6, bbox7, bbox12, threshold):
         size1 = (bbox1['x2'] - bbox1['x1']) * (bbox1['y2'] - bbox1['y1'])
         size5 = (bbox5['x2'] - bbox5['x1']) * (bbox5['y2'] - bbox5['y1'])
@@ -312,7 +304,9 @@ class Interpolator:
 
         return (size_change1_to_5 > threshold or size_change1_to_6 > threshold or size_change1_to_7 > threshold or
             size_change5_to_12 > threshold or size_change6_to_12 > threshold or size_change7_to_12 > threshold) and size_change1_to_12 < threshold
+    '''
 
+    # Checks for consecutive size changes 
     def is_consecutive_size_change(self, prev2_bbox, prev_bbox, curr_bbox, next_bbox, next2_bbox, threshold):
         size1 = (prev2_bbox['x2'] - prev2_bbox['x1']) * (prev2_bbox['y2'] - prev2_bbox['y1'])
         size2 = (prev_bbox['x2'] - prev_bbox['x1']) * (prev_bbox['y2'] - prev_bbox['y1'])
@@ -327,29 +321,23 @@ class Interpolator:
 
         return size_change1 > threshold or size_change2 > threshold or size_change3 > threshold or size_change4 > threshold
     
+    # 18 yard circle for our model specifically goes haywire so we interpolate that 
     def check_18yard_circle(self, tracks):
         for frame_idx, frame_data in enumerate(tracks["18Yard Circle"]):
             for track_id, bbox in frame_data.items():
                 if bbox and self.is_circle_too_large(bbox["bbox"], tracks["18Yard"][frame_idx]):
                     tracks["18Yard Circle"][frame_idx][track_id]['bbox'] = None
 
+    # checks if 18yard circle is too large 
     def is_circle_too_large(self, circle_bbox, yard_bbox_list):
-        if not self.is_valid_bbox_circle(circle_bbox):
+        if not bboxUtils.is_bbox_not_none(circle_bbox):
             return False
 
-        circle_size = self.calculate_bbox_size(circle_bbox)
+        circle_size = bboxUtils.calculate_bbox_size(circle_bbox)
         for yard_bbox in yard_bbox_list.values():
-            if self.is_valid_bbox_circle(yard_bbox["bbox"]):
-                yard_size = self.calculate_bbox_size(yard_bbox["bbox"])
+            if bboxUtils.is_bbox_not_none(yard_bbox["bbox"]):
+                yard_size = bboxUtils.calculate_bbox_size(yard_bbox["bbox"])
                 if circle_size >= 0.75 * yard_size:
                     return True
         return False
-
-    def calculate_bbox_size(self, bbox):
-        return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
     
-    def is_valid_bbox_circle(self, bbox):
-        # Check if bbox exists and contains valid coordinates
-        if bbox is None:
-            return False
-        return True
