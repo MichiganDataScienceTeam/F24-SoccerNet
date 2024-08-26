@@ -5,7 +5,7 @@ from roboflow import Roboflow
 SOURCE_VIDEO_PATH = "Soccergame.mov"
 TARGET_VIDEO_PATH = "video_out.mov"
 
-rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI")
+rf = Roboflow(api_key="")
 project = rf.workspace().project("football-players-detection-3zvbc")
 model = project.version(9).model
 
