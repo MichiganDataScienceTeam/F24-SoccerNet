@@ -4,9 +4,10 @@ from roboflow import Roboflow
 import pickle
 import cv2
 
-# Paths to video files
-PICKLE_FILE_PATH = "video_frames.pkl"
-TARGET_VIDEO_PATH = "video_out.mov"
+# Paths to files
+PICKLE_FILE_PATH = "video_detections.pkl"  # Path to the saved detections
+SOURCE_VIDEO_PATH = "source_video.mov"      # Path to the source video file
+TARGET_VIDEO_PATH = "video_out.mov"         # Path to the output video file
 
 # Initialize Roboflow and model
 rf = Roboflow(api_key="")
@@ -20,21 +21,33 @@ byte_tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8
 box_annotator = sv.BoxAnnotator(thickness=4, text_thickness=4, text_scale=2)
 trace_annotator = sv.TraceAnnotator(thickness=4, trace_length=50)
 
-# Function to load video frames from a pickle file
-def load_frames_from_pickle(pickle_file_path):
+# Function to load detections from a pickle file
+def load_detections_from_pickle(pickle_file_path):
     with open(pickle_file_path, 'rb') as f:
-        frames = pickle.load(f)
-    print(f"Loaded {len(frames)} frames from {pickle_file_path}")
-    return frames
+        detections = pickle.load(f)
+    print(f"Loaded detections from {pickle_file_path}")
+    return detections
 
-# Define callback function for processing frames
-def callback(frame: np.ndarray, index: int) -> np.ndarray:
-    # Model prediction on single frame and conversion to supervision Detections
-    results = model.predict(frame).json()
-    detections = sv.Detections.from_roboflow(results)
+# Load detections from pickle file
+all_detections = load_detections_from_pickle(PICKLE_FILE_PATH)
 
-    # Tracking detections
-    detections = byte_tracker.update_with_detections(detections)
+# Open the source video
+cap = cv2.VideoCapture(SOURCE_VIDEO_PATH)
+
+# Get video information
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = int(cap.get(cv2.CAP_PROP_FPS))
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # or 'XVID', 'MJPG', etc.
+out = cv2.VideoWriter(TARGET_VIDEO_PATH, fourcc, fps, (frame_width, frame_height))
+
+# Process each detection and corresponding frame
+for index, detections in enumerate(all_detections):
+    ret, frame = cap.read()  # Read a frame from the source video
+    if not ret:
+        break  # Exit if the video ends
 
     # Prepare labels for box annotations
     labels = [
@@ -52,26 +65,10 @@ def callback(frame: np.ndarray, index: int) -> np.ndarray:
         detections=detections,
         labels=labels
     )
-    
-    # Return annotated frame
-    return annotated_frame
 
-# Load frames from pickle file
-frames = load_frames_from_pickle(PICKLE_FILE_PATH)
-
-# Get video information (assuming all frames have the same dimensions)
-frame_height, frame_width = frames[0][1].shape[:2]
-fps = 30  # Assuming 30 frames per second; adjust if different
-
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # or 'XVID', 'MJPG', etc.
-out = cv2.VideoWriter(TARGET_VIDEO_PATH, fourcc, fps, (frame_width, frame_height))
-
-# Process each frame and write to the output video
-for index, frame in frames:
-    annotated_frame = callback(frame, index)
     out.write(annotated_frame)
 
-# Release the VideoWriter object
+# Release the VideoCapture and VideoWriter objects
+cap.release()
 out.release()
 print(f"Processed video saved to {TARGET_VIDEO_PATH}")
