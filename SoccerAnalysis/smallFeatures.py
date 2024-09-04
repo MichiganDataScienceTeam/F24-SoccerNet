@@ -1,4 +1,8 @@
 # Add all your features here 
 
-class smallFeatures(tracks, frames):
+class smallFeatures():
+
+
+  def exampleFeature(self, tracks, frames):
+    print(tracks)
   
