@@ -1,16 +1,20 @@
 import numpy as np
 import supervision as sv
 from roboflow import Roboflow
+from inference import get_model
 
-SOURCE_VIDEO_PATH = "Soccergame.mov"
-TARGET_VIDEO_PATH = "video_out.mov"
 
-rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI")
-project = rf.workspace().project("football-players-detection-3zvbc")
-model = project.version(9).model
+SOURCE_VIDEO_PATH = "shortTestVid.mov"
+TARGET_VIDEO_PATH = "video_out.mp4"
+
+rf = Roboflow(api_key="")
+#project = rf.workspace().project("football-players-detection-3zvbc")
+model = get_model(model_id="football-players-detection-3zvbc/9")
+#model = project.version(9).model
+#print("model is 1111", model)
 
 # Create BYTETracker instance
-byte_tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8, frame_rate=30)
+byte_tracker = sv.ByteTrack(track_activation_threshold=0.25, lost_track_buffer=30, minimum_matching_threshold=0.8, frame_rate=1)
 
 # Create VideoInfo instance
 video_info = sv.VideoInfo.from_video_path(SOURCE_VIDEO_PATH)
@@ -19,7 +23,7 @@ video_info = sv.VideoInfo.from_video_path(SOURCE_VIDEO_PATH)
 generator = sv.get_video_frames_generator(SOURCE_VIDEO_PATH)
 
 # Create instance of BoxAnnotator
-box_annotator = sv.BoxAnnotator(thickness=4, text_thickness=4, text_scale=2)
+box_annotator = sv.BoxAnnotator(thickness=4)
 
 # Create instance of TraceAnnotator
 trace_annotator = sv.TraceAnnotator(thickness=4, trace_length=50)
@@ -27,8 +31,11 @@ trace_annotator = sv.TraceAnnotator(thickness=4, trace_length=50)
 # Define callback function to be used in video processing
 def callback(frame: np.ndarray, index: int) -> np.ndarray:
     # Model prediction on single frame and conversion to supervision Detections
-    results = model.predict(frame).json()
-    detections = sv.Detections.from_roboflow(results)
+    print('callback')
+    print("frame is ", frame)
+    print("model is ", model)
+    results = model.infer(frame)
+    detections = sv.Detections.from_inference(results[0].dict(by_alias=True, exclude_none=True))
 
     # Show detections in real time
     print(detections)
@@ -51,7 +58,6 @@ def callback(frame: np.ndarray, index: int) -> np.ndarray:
     annotated_frame = box_annotator.annotate(
         scene=annotated_frame,
         detections=detections,
-        labels=labels
     )
     
     # Return annotated frame
