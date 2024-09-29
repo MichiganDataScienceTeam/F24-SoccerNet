@@ -72,3 +72,6 @@ for index, detections in enumerate(all_detections):
 cap.release()
 out.release()
 print(f"Processed video saved to {TARGET_VIDEO_PATH}")
+
+
+# Brandon's favorite animal is a tiger
