@@ -7,7 +7,7 @@ from inference import get_model
 SOURCE_VIDEO_PATH = "shortTestVid.mov"
 TARGET_VIDEO_PATH = "video_out.mp4"
 
-rf = Roboflow(api_key="sQSgPz1GyivBdnnWUKtR")
+rf = Roboflow(api_key="")
 #project = rf.workspace().project("football-players-detection-3zvbc")
 model = get_model(model_id="football-players-detection-3zvbc/9")
 #model = project.version(9).model
