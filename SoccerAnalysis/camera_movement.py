@@ -6,7 +6,7 @@ import sys
 sys.path.append('../')
 
 
-#added new branch
+#added new stuff
 
 
 class CameraMovementEstimator():
