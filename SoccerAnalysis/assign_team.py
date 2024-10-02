@@ -5,7 +5,7 @@ class TeamAssigner:
         self.team_colors = {}
         self.player_team_dict = {}
     
-    # Reshape the image to 2D array and preform K-means with 2 clusters
+    # Reshape the image to a 2D array and preform K-means with 2 clusters
     def get_clustering_model(self,image):
         image_2d = image.reshape(-1,3)
         
