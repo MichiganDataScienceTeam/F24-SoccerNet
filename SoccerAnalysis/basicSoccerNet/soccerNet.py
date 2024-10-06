@@ -10,7 +10,7 @@ SOURCE_VIDEO_PATH = "source_video.mov"      # Path to the source video file
 TARGET_VIDEO_PATH = "video_out.mov"         # Path to the output video file
 
 # Initialize Roboflow and model
-rf = Roboflow(api_key="")
+rf = Roboflow(api_key="2c8BbR867fBO7Rmyg9VI")
 project = rf.workspace().project("football-players-detection-3zvbc")
 model = project.version(9).model
 
@@ -18,7 +18,7 @@ model = project.version(9).model
 byte_tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8, frame_rate=30)
 
 # Create instance of BoxAnnotator and TraceAnnotator
-box_annotator = sv.BoxAnnotator(thickness=4, text_thickness=4, text_scale=2)
+box_annotator = sv.BoxAnnotator(thickness=4)
 trace_annotator = sv.TraceAnnotator(thickness=4, trace_length=50)
 
 # Function to load detections from a pickle file

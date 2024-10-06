@@ -3,8 +3,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.linear_model import LinearRegression
 import pickle
-import os
-
+import os 
 class WhiteLineDetector:
     def __init__(self):
         self.intersections = []
