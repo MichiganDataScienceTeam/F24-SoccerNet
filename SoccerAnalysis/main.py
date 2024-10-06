@@ -39,24 +39,8 @@ print("Roboflow models initialized")
 tracker = Tracker(PlAYER_API_KEY, PLAYER_PROJECT_NAME, VERSION_NUMBER, BOXES_API_KEY, BOXES_PROJECT_NAME, VERSION_NUMBER)
 print("Tracker Initialized")
 
-if os.path.exists(STUB_FRAMES_PATH):
-        try:
-            with open(STUB_FRAMES_PATH, 'rb') as f:
-                frames = pickle.load(f)
-            print("Frames loaded successfully from stub")
-        except (EOFError, pickle.UnpicklingError) as e:
-            print(f"Error loading frames from stub: {e}")
-            frames = None
-else:
-        print("Reading frames from video...")
-        frames = videoUtils.read_video(SOURCE_VIDEO_PATH)
-        if isinstance(frames, np.ndarray):
-            with open(STUB_FRAMES_PATH, 'wb') as f:
-                pickle.dump(frames, f)
-            print(f"Frames stored in {STUB_FRAMES_PATH}")
-        else:
-            print("Error: Invalid frames data. Unable to process video.")
-            frames = None
+
+frames = videoUtils.read_video(SOURCE_VIDEO_PATH)
     
     
 tracks = tracker.get_object_tracks(frames, read_from_stub=True, stub_path="stub_path_mid.pkl")
