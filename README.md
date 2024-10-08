@@ -31,7 +31,7 @@ By tracking players over time, we can calculate their speed and total distance t
 ## How It Works
 The system works by combining computer vision models with traditional field recognition techniques. The workflow includes:
 - **Player Detection**: Using pre-trained Roboflow models to detect players, referees, and the ball in video frames.
-- **Field Detection**: Using pre-trained Roboflow models to detect relevant feild areas like half field and center circle.
+- **Field Detection**: Using pre-trained Roboflow models to detect relevant field areas like half field and center circle.
 - **Object Tracking**: Tracking detected objects across frames to generate consistent data for each player.
 - **Homography Computation**: Mapping the video frames onto a real-world soccer pitch using detected key points for accurate spatial measurements.
 
