@@ -21,6 +21,12 @@ Players are automatically assigned to teams based on their position and movement
 ### 3. Player Speed and Distance Traveled
 By tracking players over time, we can calculate their speed and total distance traveled during a match. This data provides insights into player stamina, effort, and performance.
 
+### Example
+
+<p align="center">
+  <img src="/assets/example.gif" alt="Example" />
+</p>
+
 
 ## How It Works
 The system works by combining computer vision models with traditional field recognition techniques. The workflow includes:
