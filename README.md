@@ -43,11 +43,15 @@ We are continually working to improve and expand the capabilities of this projec
    ```bash
    git clone https://github.com/your-repo/soccernet.git](https://github.com/MichiganDataScienceTeam/F24-SoccerNet.git
 
-2. **Install dependencies: Make sure you have Python 3.11 installed before proceeding**:
+2. **Clone the repository**:
+   ```bash
+   cd SoccerAnalysis
+
+3. **Install dependencies: Make sure you have Python 3.11 installed before proceeding**:
    ```bash
    pip install -r requirements.txt
 
-3. Run the analysis: Start processing a match by running:
+4. Run the analysis: Start processing a match by running:
    ```bash
    python3 main.py
 
