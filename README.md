@@ -13,7 +13,7 @@ By harnessing the power of computer vision, we can transform the way soccer can 
 ## Key Features
 
 ### 1. Camera Calibration, Pitch Localization, and Homography
-We use a combination of camera calibration, pitch localization, and homography to ensure accurate alignment of the video frames with real-world coordinates. By detecting key stationary points on the soccer pitch—such as field boundaries, lines, and other markings—we calibrate the camera and localize the pitch within the video. This process allows us to ground all measurements, such as player positions and movements, in real-world field locations. Additionally, by computing a homography from multiple key points on the pitch, we map 2D video data to 3D space, enabling highly precise spatial analysis and ensuring that our tracking and analysis are accurate throughout the game.
+We use a combination of camera calibration, pitch localization, and homography to ensure accurate alignment of the video frames with real-world coordinates. By detecting key stationary points on the soccer pitch, we calibrate the camera and localize the pitch within the video. This process allows us to ground all measurements, such as player positions and movements, in real-world field locations. Additionally, by computing a homography from multiple key points on the pitch, we map 2D video data to 3D space, enabling highly precise spatial analysis and ensuring that our tracking and analysis are accurate throughout the game.
 
 ### 2. Team Assignments
 Players are automatically assigned to teams based on their position and movement on the field. This allows us to derive team-based statistics, formations, and strategies.
