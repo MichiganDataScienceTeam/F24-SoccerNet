@@ -42,3 +42,13 @@ We are continually working to improve and expand the capabilities of this projec
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/your-repo/soccernet.git
+
+2. **Install dependencies: Make sure you have Python 3.11 installed before proceeding**:
+   ```bash
+   pip install -r requirements.txt
+
+3. Run the analysis: Start processing a match by running:
+   ```bash
+   python3 main.py --input [path_to_video]
+
+View results: Results will be saved as annotations and can be visualized in an output video through the provided tools.
