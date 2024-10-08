@@ -49,6 +49,6 @@ We are continually working to improve and expand the capabilities of this projec
 
 3. Run the analysis: Start processing a match by running:
    ```bash
-   python3 main.py --input [path_to_video]
+   python3 main.py
 
 View results: Results will be saved as annotations and can be visualized in an output video through the provided tools.
