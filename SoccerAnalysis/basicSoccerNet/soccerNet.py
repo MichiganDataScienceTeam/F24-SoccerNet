@@ -6,30 +6,32 @@ import cv2
 
 # Paths to files
 PICKLE_FILE_PATH = "video_detections.pkl"  # Path to the saved detections
-SOURCE_VIDEO_PATH = "source_video.mov"      # Path to the source video file
-TARGET_VIDEO_PATH = "video_out.mov"         # Path to the output video file
+SOURCE_VIDEO_PATH = "short_soccer_vid.mp4"      # Path to the source video file
+TARGET_VIDEO_PATH = "video_out.mp4"         # Path to the output video file
 
 # Initialize Roboflow and model
-rf = Roboflow(api_key="")
+rf = Roboflow(api_key="sQSgPz1GyivBdnnWUKtR")
 project = rf.workspace().project("football-players-detection-3zvbc")
 model = project.version(9).model
 
 # Create BYTETracker instance
-byte_tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8, frame_rate=30)
+#byte_tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8, frame_rate=30)
+#byte_tracker = sv.ByteTrack(track_buffer=30, match_thresh=0.8, frame_rate=30)
 
 # Create instance of BoxAnnotator and TraceAnnotator
-box_annotator = sv.BoxAnnotator(thickness=4, text_thickness=4, text_scale=2)
+box_annotator = sv.BoxAnnotator(thickness=4)
+
 trace_annotator = sv.TraceAnnotator(thickness=4, trace_length=50)
 
 # Function to load detections from a pickle file
-def load_detections_from_pickle(pickle_file_path):
-    with open(pickle_file_path, 'rb') as f:
-        detections = pickle.load(f)
-    print(f"Loaded detections from {pickle_file_path}")
-    return detections
+# def load_detections_from_pickle(pickle_file_path):
+#     with open(pickle_file_path, 'rb') as f:
+#         detections = pickle.load(f)
+#     print(f"Loaded detections from {pickle_file_path}")
+#     return detections
 
 # Load detections from pickle file
-all_detections = load_detections_from_pickle(PICKLE_FILE_PATH)
+# all_detections = load_detections_from_pickle(PICKLE_FILE_PATH)
 
 # Open the source video
 cap = cv2.VideoCapture(SOURCE_VIDEO_PATH)
@@ -72,3 +74,7 @@ for index, detections in enumerate(all_detections):
 cap.release()
 out.release()
 print(f"Processed video saved to {TARGET_VIDEO_PATH}")
+
+"""
+Aarnav, and my favorite animal are dogs
+"""
