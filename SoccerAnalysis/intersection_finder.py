@@ -26,7 +26,7 @@ class SuperAlgorithm:
                     # get top right intersection in 18 yard box  
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
                         top_18yard_point = bboxUtils.get_top_right(eighteen_yard_bbox)
                         top_18yard_point = (top_18yard_point[0], top_18yard_point[1] + 40)
                         if self.is_intersection_present(intersections, top_18yard_point, 100) is not False:
@@ -35,7 +35,7 @@ class SuperAlgorithm:
                     # get top left intersection in 5 yard box 
                     for five_yard_id, five_yard_info in five_yard_frame.items():
                         five_yard_bbox = five_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
                         top_left_five_yard_point = bboxUtils.get_top_right(five_yard_bbox)
                         top_left_five_yard_point = (top_left_five_yard_point[0], top_left_five_yard_point[1] + 30)
                         if self.is_intersection_present(intersections, top_left_five_yard_point, 100) is not False:
@@ -47,7 +47,7 @@ class SuperAlgorithm:
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
                         for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
-                            intersections = tracks["Key Points"][frame_num]["points"]
+                            intersections = tracks["Key Points"][frame_num].get("points", [])
                             eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
                             if bboxUtils.is_bbox_inside(eighteen_yard_bbox, eighteen_yard_circle_bbox):
                                 bottom_18_yard_circle_point = bboxUtils.get_bottom_left(eighteen_yard_circle_bbox)
@@ -55,7 +55,7 @@ class SuperAlgorithm:
 
                     # get top right intersection in 18yard circle 
                     for eighteen_yard_circle_id, eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
                         eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
                         top_18yard_circle_point = bboxUtils.get_top_right(eighteen_yard_circle_bbox)
                         top_18yard_circle_point = (top_18yard_circle_point[0] - 40, top_18yard_circle_point[1])
@@ -83,7 +83,7 @@ class SuperAlgorithm:
                      # get the left top 18 yard point and left bottom 18 yard circle point
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
 
                         bottom_left_point = bboxUtils.get_bottom_right(eighteen_yard_bbox)
                         bottom_right_point = bboxUtils.get_bottom_left(eighteen_yard_bbox)
@@ -136,7 +136,7 @@ class SuperAlgorithm:
                     
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
                         top_18yard_point = bboxUtils.get_top_left(eighteen_yard_bbox)
                         top_18yard_point = (top_18yard_point[0], top_18yard_point[1] + 40)
                         if self.is_intersection_present(intersections, top_18yard_point, 100) is not False:
@@ -144,7 +144,7 @@ class SuperAlgorithm:
 
                     for five_yard_id, five_yard_info in five_yard_frame.items():
                         five_yard_bbox = five_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
                         top_right_five_yard_point = bboxUtils.get_top_left(five_yard_bbox)
                         top_right_five_yard_point = (top_right_five_yard_point[0], top_right_five_yard_point[1] + 30)
                         if self.is_intersection_present(intersections, top_right_five_yard_point, 100) is not False:
@@ -155,14 +155,14 @@ class SuperAlgorithm:
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
                         for eighteen_yard_circle_id,eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
-                            intersections = tracks["Key Points"][frame_num]["points"]
+                            intersections = tracks["Key Points"][frame_num].get("points", [])
                             eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
                             if bboxUtils.is_bbox_inside(eighteen_yard_bbox, eighteen_yard_circle_bbox):
                                 bottom_18_yard_circle_point = bboxUtils.get_bottom_right(eighteen_yard_circle_bbox)
                                 tracks["Key Points"][frame_num]["Right Bottom 18Yard Circle Point"] = bottom_18_yard_circle_point
 
                     for eighteen_yard_circle_id,eighteen_yard_circle_info in eighteen_yard_circle_frame.items():
-                            intersections = tracks["Key Points"][frame_num]["points"]
+                            intersections = tracks["Key Points"][frame_num].get("points", [])
                             eighteen_yard_circle_bbox = eighteen_yard_circle_info['bbox']
                             top_18yard_circle_point = bboxUtils.get_top_left(eighteen_yard_circle_bbox)
                             top_18yard_circle_point = (top_18yard_circle_point[0] + 40, top_18yard_circle_point[1])
@@ -190,7 +190,7 @@ class SuperAlgorithm:
                     
                     for eighteen_yard_id, eighteen_yard_info in eighteen_yard_frame.items():
                         eighteen_yard_bbox = eighteen_yard_info['bbox']
-                        intersections = tracks["Key Points"][frame_num]["points"]
+                        intersections = tracks["Key Points"][frame_num].get("points", [])
 
                         # Get the bottom-left and bottom-right points of the 18-yard bounding box
                         bottom_left_point = bboxUtils.get_bottom_left(eighteen_yard_bbox)
@@ -236,7 +236,7 @@ class SuperAlgorithm:
         for frame_num, (first_half_frame, second_half_frame) in enumerate(zip(first_half, second_half)):
             for first_id, first_info in first_half_frame.items():
                 for second_id, second_info in second_half_frame.items():
-                    intersections = tracks["Key Points"][frame_num]["points"]
+                    intersections = tracks["Key Points"][frame_num].get("points", [])
                     if 'bbox' in first_info and 'bbox' in second_info:
                         first_bbox = first_info['bbox']
                         second_bbox = second_info['bbox']
@@ -350,7 +350,8 @@ class SuperAlgorithm:
         if "Key Points" not in tracks:
             tracks["Key Points"] = []
 
-        intersections = tracks["Key Points"][frame_num]["points"]
+        intersections = tracks["Key Points"][frame_num].get("points", [])
+
 
         top_val = self.is_intersection_present(intersections, top_circle_point, 50)
 
@@ -452,6 +453,3 @@ class SuperAlgorithm:
                 if second_area > first_area:
                     return True
         return False
-
-    
-
