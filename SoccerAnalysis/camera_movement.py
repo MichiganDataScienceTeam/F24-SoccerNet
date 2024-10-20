@@ -18,7 +18,7 @@ class CameraMovementEstimator():
             for frame_num, track in enumerate(object_tracks):
                 for track_id, track_info in track.items():
                     if object in ['ball', 'referees', 'players']:
-                        position = track_info['position']
+                        position = track_info.get("position", [])
                         position = np.array(position)
                         camera_movement = np.array(camera_movement_per_frame[frame_num])
                         position_adjusted = position - camera_movement
