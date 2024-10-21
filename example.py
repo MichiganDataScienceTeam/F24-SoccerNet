@@ -1,8 +1,7 @@
-# test_script.py
 
-import SoccerAnalysis #eplace with your actual package name
 
-# Call a function from your package
+import SoccerAnalysis 
+
 frames = SoccerAnalysis.process_video(
     source_video_path="20SecGoodVid.mov",
     target_video_path="interpolation_test4.mp4",
