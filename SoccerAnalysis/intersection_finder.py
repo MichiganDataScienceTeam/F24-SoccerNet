@@ -1,6 +1,6 @@
-import bboxUtils
 import pandas as pd
 import numpy as np
+from . import bboxUtils
 
 class SuperAlgorithm:
     def __init__(self):

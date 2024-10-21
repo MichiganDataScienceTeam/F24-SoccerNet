@@ -8,6 +8,7 @@ from .speed_and_distance_estimator import SpeedAndDistance_Estimator
 from .intersection_finder import SuperAlgorithm
 from .transformer import ViewTransformer
 from . import videoUtils
+from . import bboxUtils
 
 __all__ = [
     'process_video',

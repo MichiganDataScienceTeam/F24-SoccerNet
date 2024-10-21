@@ -6,7 +6,8 @@ import cv2
 import base64
 import supervision as sv
 from inference_sdk import InferenceHTTPClient
-import bboxUtils
+from . import bboxUtils
+
 
 class Tracker:
     def __init__(self, api_key, project_name, version_number):

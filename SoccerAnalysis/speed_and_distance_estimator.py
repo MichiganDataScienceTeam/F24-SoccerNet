@@ -2,7 +2,9 @@ import cv2
 import sys 
 import numpy as np
 sys.path.append('../')
-from bboxUtils import measure_distance ,get_foot_position
+from .bboxUtils import measure_distance, get_foot_position
+
+
 
 class SpeedAndDistance_Estimator():
     def __init__(self):

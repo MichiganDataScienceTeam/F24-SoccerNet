@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import bboxUtils
+from . import bboxUtils
+
 
 class Interpolator:
     def __init__(self):
