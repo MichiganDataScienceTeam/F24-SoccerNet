@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='SoccerAnalysis',              # Your package name
-    version='0.1.0',                  # Version number
+    name='SoccerAnalysis',             
+    version='0.1.0',                
     description='A soccer analysis package using Roboflow and tracking systems to accurately track a soccer game',
     author='Antonio Capdevielle, Shiva Chandran',
     author_email='acapdevi@umich.edu',
-    packages=find_packages(),         # Automatically find all subpackages
-    install_requires=[                # List of dependencies         
+    packages=find_packages(),         
+    install_requires=[                
         'absl-py==2.1.0',
         'aiohttp==3.9.5',
         'aioresponses==0.7.6',
@@ -179,10 +179,10 @@ setup(
         'yarl==1.9.4',
         'zxing-cpp==2.2.0',
     ],
-    classifiers=[                     # Metadata to help users find your project
+    classifiers=[                     
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='==3.11.x',          # Specify Python version requirements
+    python_requires='==3.11.x',        
 )
