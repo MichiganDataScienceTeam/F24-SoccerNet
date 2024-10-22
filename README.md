@@ -43,22 +43,21 @@ We are continually working to improve and expand the capabilities of this projec
 
 ---
 
-### Getting Started
+### Getting Started (In Developement)
 
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/MichiganDataScienceTeam/F24-SoccerNet.git
 
-2. **Enter the SoccerAnalysis Directory**:
-   ```bash
-   cd SoccerAnalysis
-
-3. **Install dependencies: Make sure you have Python 3.11 installed before proceeding**:
+2. **Install dependencies: Make sure you have Python 3.11 installed before proceeding**:
    ```bash
    pip install -r requirements.txt
 
-4. Run the analysis: Start processing a match by running:
+3. **install the package in editable mode**:
    ```bash
-   python3 main.py
+   pip install -e .
+
+4. Run the analysis in example.py:
+   
 
 View results: Results will be saved as annotations and can be visualized in an output video through the provided tools.
