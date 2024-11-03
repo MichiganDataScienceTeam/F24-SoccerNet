@@ -9,7 +9,9 @@ import bboxUtils
 
 
 
-
+team_dict = {}
+# team1 : num frames of team 1
+# team2 : num frames of team 2
 
 
 
@@ -17,13 +19,14 @@ import bboxUtils
 def ball_control(self, tracks, frames, track_id):
     team_assigner = TeamAssigner()
     team_assigner.assign_team_color(frames[0], tracks['players'][0])
+
     for frame_num, player_track in enumerate(tracks['players']):
         for track_id, track in player_track.items():
             team = team_assigner.get_player_team(frames[frame_num], track['bbox'], track_id)
-            tracks['players'][frame_num][track_id]['team'] = team
-            tracks['players'][frame_num][track_id]['team_color'] = team_assigner.team_colors[team]
-    
-    
+
+            if team not in team_dict:
+                team_dict[team] = 0
+
 
 
     for object, object_tracks in tracks.items():
@@ -32,9 +35,11 @@ def ball_control(self, tracks, frames, track_id):
                 bbox = track_info['bbox']
                 if object == 'ball':
                     position= bboxUtils.get_center_of_bbox(bbox)
-                    tracks[object][frame_num][track_id]['position'] = position
                 elif object == 'player' or object == 'referee':
                     position = bboxUtils.get_foot_position(bbox)
-                    tracks[object][frame_num][track_id]['position'] = position
+
+
+        # for each frame in video grab the postion of ball and player
+
 
     
