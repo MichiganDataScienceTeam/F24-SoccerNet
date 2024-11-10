@@ -11,7 +11,9 @@ from camera_movement import CameraMovementEstimator
 from speed_and_distance_estimator import SpeedAndDistance_Estimator
 from intersection_finder import SuperAlgorithm
 from transformer import ViewTransformer
+from goalFinder import Goal
 import videoUtils
+
 
 SOURCE_VIDEO_PATH = "20SecGoodVid.mov"
 TARGET_VIDEO_PATH = "interpolation_test4.mp4"
@@ -89,6 +91,11 @@ for frame_num, player_track in enumerate(tracks['players']):
             team = team_assigner.get_player_team(frames[frame_num], track['bbox'], track_id)
             tracks['players'][frame_num][track_id]['team'] = team
             tracks['players'][frame_num][track_id]['team_color'] = team_assigner.team_colors[team]
+
+
+
+goalMade = Goal(view_transformer.field_width, view_transformer.field_height)
+
 
 
 print("Drawing Speed and Distances")
