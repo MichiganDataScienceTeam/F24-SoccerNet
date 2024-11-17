@@ -15,13 +15,13 @@ import videoUtils
 
 SOURCE_VIDEO_PATH = "20SecGoodVid.mov"
 TARGET_VIDEO_PATH = "interpolation_test4.mp4"
-PlAYER_API_KEY = ""
-PLAYER_STUB_PATH = "stub_tracks_mid.pkl"
+PlAYER_API_KEY = "PDqsXW1WZ8NSCFUPA2yW"
+PLAYER_STUB_PATH = "stub_path_mid.pkl"
 PLAYER_PROJECT_NAME = "football-players-detection-3zvbc"
 VERSION_NUMBER = 1
-BOXES_API_KEY = ""
+BOXES_API_KEY = "PDqsXW1WZ8NSCFUPA2yW"
 BOXES_PROJECT_NAME = "football0detections"
-STUB_FRAMES_PATH = "frames_stub.pkl"
+STUB_FRAMES_PATH = "vpframesstub.pkl"
 
 
 # Initialize the Plyer Roboflow model and Tracker
@@ -43,7 +43,7 @@ print("Tracker Initialized")
 frames = videoUtils.read_video(SOURCE_VIDEO_PATH)
     
     
-tracks = tracker.get_object_tracks(frames, read_from_stub=True, stub_path="stub_path_mid.pkl")
+tracks = tracker.get_object_tracks(frames, read_from_stub=True, stub_path=PLAYER_STUB_PATH)
 
 tracker.add_position_to_tracks(tracks)
 print("Adding Positions To Tracks")
@@ -115,4 +115,6 @@ print("Drawing Annotations")
 annotated_frames = tracker.draw_annotations(frames, tracks)
 
 videoUtils.save_video(annotated_frames, TARGET_VIDEO_PATH) #SWITCH TO FINAL_ANNOTATED_FRAMES
+print(tracks)
+print(frames)
 print("Video saved successfully")
