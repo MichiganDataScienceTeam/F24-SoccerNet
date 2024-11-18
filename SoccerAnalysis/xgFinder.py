@@ -133,12 +133,14 @@ class xgFinder():
         numseconds = numframes / fps
         # Our clip is this long
         clips = [0]
-        prog = 0.25
-        prognum = 0.25 * fps
-        while prog < numseconds:
-            clips.append(prognum)
-            prog +=0.25 
-            prognum += 0.25*fps
+        INTERVAL = 0.25
+        currentTime = INTERVAL
+        currentFrame = INTERVAL * fps
+        while currentTime < numseconds:
+            clips.append(currentFrame)
+            currentTime += INTERVAL 
+            currnetFrame += INTERVAL*fps
+        clips.append(numframes - 1)
         # clips now contains the frame numbers for all of the clips we are interested in (0.25 second intervals)
         # Maybe we cut the clip when he shoots
         # xgLog = []
