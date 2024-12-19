@@ -24,7 +24,7 @@ By tracking players over time, we can calculate their speed and total distance t
 ## Example
 
 <p align="center">
-  <img src="/assets/SoccerNetDemo.gif" alt="Example" />
+  <img src="/assets/SoccerNetDemoPic.png" alt="Example" />
 </p>
 
 
